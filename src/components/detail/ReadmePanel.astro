@@ -1,0 +1,21 @@
+---
+// 왼쪽 README 패널
+// 참고 디자인: 상단 "README.md" 라벨 바 + 본문 (prose 스타일)
+// 본문은 미리 sanitize된 HTML이므로 set:html로 주입
+
+interface Props {
+  html: string;
+}
+
+const { html } = Astro.props;
+---
+
+<section class="glass-card rounded-xl overflow-hidden">
+  <div class="bg-white/5 px-6 py-3 border-b border-white/10 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <span class="material-symbols-outlined text-white/40">list</span>
+      <span class="font-label-md text-white/80">README.md</span>
+    </div>
+  </div>
+  <div class="p-10 prose-dark" set:html={html} />
+</section>

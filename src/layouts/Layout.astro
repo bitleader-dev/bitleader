@@ -1,0 +1,71 @@
+---
+// 공통 레이아웃: 폰트 로드 + 전역 스타일 + 메타 태그 + 전역 Footer
+// - Open Graph / Twitter 카드 포함 (슬랙·카카오톡 등 공유 미리보기용)
+// - favicon은 public/favicon.svg
+import '../styles/global.css';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = 'BIT LEADER',
+  description = 'Bitleader 엔지니어링 팀이 만든 제품과 실험을 공유하는 공간입니다.',
+} = Astro.props;
+
+// 절대 URL 계산 (Open Graph / Twitter 카드용)
+const siteUrl = Astro.site?.toString().replace(/\/$/, '') ?? 'https://bitleader-dev.github.io';
+const baseUrl = import.meta.env.BASE_URL.replace(/\/$/, '');
+const absoluteHome = `${siteUrl}${baseUrl}/`;
+const absoluteOgImage = `${siteUrl}${baseUrl}/Thumbnail.png`;
+const faviconHref = `${baseUrl}/favicon.svg`;
+---
+
+<!DOCTYPE html>
+<html class="dark" lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href={faviconHref} />
+
+    <!-- Open Graph (공유 미리보기) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="BIT LEADER" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={absoluteHome} />
+    <meta property="og:image" content={absoluteOgImage} />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={absoluteOgImage} />
+
+    <!-- Inter 폰트 로드 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Material Symbols Outlined (아이콘) -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body
+    class="bg-background text-on-background font-body-md antialiased selection:bg-primary-container selection:text-on-primary-container"
+  >
+    <slot />
+    <Footer />
+  </body>
+</html>

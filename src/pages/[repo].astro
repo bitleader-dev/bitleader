@@ -1,0 +1,54 @@
+---
+// 저장소 상세 페이지 (동적 라우트)
+// URL: /bitleader/{repo-name}
+// 참고: stitch_dark_card_dashboard (1)/code.html 동일 레이아웃
+
+import Layout from '../layouts/Layout.astro';
+import DetailHeader from '../components/detail/DetailHeader.astro';
+import ReadmePanel from '../components/detail/ReadmePanel.astro';
+import ReleasesCard from '../components/detail/ReleasesCard.astro';
+import ActionButtons from '../components/detail/ActionButtons.astro';
+import { getDetailRouteList, getRepoDetail } from '../lib/data';
+
+// 빌드 타임에 모든 저장소 상세 페이지 경로 생성
+export async function getStaticPaths() {
+  const list = await getDetailRouteList();
+  // 각 저장소마다 RepoDetailData를 미리 조회해 props로 전달 (중복 API 호출 방지)
+  const entries = await Promise.all(
+    list.map(async (item) => {
+      const detail = await getRepoDetail(item.name);
+      return detail ? { params: { repo: item.name }, props: { detail } } : null;
+    })
+  );
+  return entries.filter((e): e is NonNullable<typeof e> => e !== null);
+}
+
+const { detail } = Astro.props;
+const pageTitle = `${detail.name} — Bitleader`;
+---
+
+<Layout title={pageTitle} description={detail.description ?? undefined}>
+  <DetailHeader />
+
+  <main class="pt-16 min-h-screen">
+    <div class="max-w-7xl mx-auto px-8 py-12">
+      <!-- Breadcrumb -->
+      <div class="flex items-center gap-2 mb-8 text-white/40 font-label-md">
+        <span class="text-[#00F0FF] font-bold">{detail.name}</span>
+      </div>
+
+      <div class="grid grid-cols-12 gap-8">
+        <!-- 왼쪽: README 패널 -->
+        <div class="col-span-12 lg:col-span-8">
+          <ReadmePanel html={detail.readmeHtml} />
+        </div>
+
+        <!-- 오른쪽: Releases 카드 + 액션 버튼 -->
+        <div class="col-span-12 lg:col-span-4 space-y-6">
+          <ReleasesCard releases={detail.releases} repoUrl={detail.url} />
+          <ActionButtons downloadUrl={detail.downloadUrl} repoUrl={detail.url} />
+        </div>
+      </div>
+    </div>
+  </main>
+</Layout>

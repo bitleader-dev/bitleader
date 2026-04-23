@@ -1,0 +1,65 @@
+---
+// Topic 필터 + 정렬 드롭다운
+// 참고: stitch_dark_card_dashboard (6)/code.html 의 SORT BY select 스타일 이식
+// - 라벨 + select 가로 조합
+// - rounded(각진) + border border-white/10 + bg-surface-container-low
+// - focus 시 primary-container(#00F0FF) 테두리/링
+// 클라이언트 필터링 로직은 src/scripts/filter.ts 에서 처리
+
+interface Props {
+  topics: string[];
+}
+
+const { topics } = Astro.props;
+---
+
+<div class="flex flex-wrap items-center gap-6 mb-6">
+  <!-- Topic 필터 드롭다운 -->
+  <div class="relative min-w-[200px] flex items-center gap-3">
+    <label
+      for="topic-filter"
+      class="text-zinc-500 font-label-md uppercase tracking-wider whitespace-nowrap"
+      >Topic</label
+    >
+    <div class="relative flex-1 group">
+      <select
+        id="topic-filter"
+        class="w-full appearance-none bg-surface-container-low border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-container/50 focus:ring-1 focus:ring-primary-container/20 transition-all cursor-pointer"
+      >
+        <option class="bg-zinc-900" value="">전체 Topic</option>
+        {topics.map((t) => <option class="bg-zinc-900" value={t}>{t}</option>)}
+      </select>
+      <span
+        class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none group-focus-within:text-primary-container"
+        >expand_more</span
+      >
+    </div>
+  </div>
+
+  <!-- 정렬 드롭다운 -->
+  <div class="relative min-w-[200px] flex items-center gap-3">
+    <label
+      for="sort-order"
+      class="text-zinc-500 font-label-md uppercase tracking-wider whitespace-nowrap"
+      >정렬</label
+    >
+    <div class="relative flex-1 group">
+      <select
+        id="sort-order"
+        class="w-full appearance-none bg-surface-container-low border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-container/50 focus:ring-1 focus:ring-primary-container/20 transition-all cursor-pointer"
+      >
+        <option class="bg-zinc-900" value="updated">최근 업데이트순</option>
+        <option class="bg-zinc-900" value="stars">스타 많은순</option>
+        <option class="bg-zinc-900" value="name">이름순 (A-Z)</option>
+        <option class="bg-zinc-900" value="created">최근 생성순</option>
+      </select>
+      <span
+        class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none group-focus-within:text-primary-container"
+        >expand_more</span
+      >
+    </div>
+  </div>
+
+  <!-- 결과 카운트 (클라이언트에서 업데이트) -->
+  <span id="result-count" class="text-xs text-zinc-500 ml-auto"></span>
+</div>

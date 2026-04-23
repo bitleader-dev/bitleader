@@ -1,0 +1,124 @@
+// 빌드 타임 데이터 페칭: GitHub에서 저장소 목록 + README를 가져와
+// 카드 렌더링용 RepoCardData 배열로 정규화
+// 또한 상세 페이지용 RepoDetailData 조립 (README 전문 HTML + Releases + Download URL)
+
+import { fetchPublicRepos, fetchReadme, fetchReleases } from './github';
+import { extractFirstImage, extractSummary, renderMarkdown } from './readme';
+import overridesData from '../data/repo-overrides.json';
+import type {
+  RepoCardData,
+  RepoDetailData,
+  GitHubRepo,
+  GitHubRelease,
+  RepoOverridesMap,
+} from './types';
+
+// 홈페이지 자체 저장소 이름: 대시보드에서 본인을 표시하지 않도록 제외
+const HOMEPAGE_REPO = 'bitleader';
+
+const overrides = overridesData as RepoOverridesMap;
+
+// 단일 저장소 → (README 없으면) null / (README 있으면) 카드 데이터
+async function buildCardData(repo: GitHubRepo): Promise<RepoCardData | null> {
+  const readme = await fetchReadme(repo.name);
+
+  // README 없으면 카드 목록에서 제외
+  if (!readme) return null;
+
+  const imageUrl = extractFirstImage(readme, repo.name, repo.default_branch);
+  const summary = extractSummary(readme);
+
+  return {
+    name: repo.name,
+    description: repo.description,
+    url: repo.html_url,
+    language: repo.language,
+    stars: repo.stargazers_count,
+    topics: repo.topics ?? [],
+    updatedAt: repo.updated_at,
+    createdAt: repo.created_at,
+    imageUrl,
+    summary,
+  };
+}
+
+// 대시보드 대상 저장소 목록 (홈페이지 자체 + README 없는 저장소 제외)
+// 메인 페이지와 상세 페이지 양쪽에서 사용
+async function fetchTargetRepos(): Promise<GitHubRepo[]> {
+  const repos = await fetchPublicRepos();
+  return repos.filter((r) => r.name !== HOMEPAGE_REPO);
+}
+
+// 카드 데이터 전체 조회 (메인 페이지용)
+export async function getAllRepoCards(): Promise<RepoCardData[]> {
+  const repos = await fetchTargetRepos();
+  if (repos.length === 0) return [];
+
+  const results = await Promise.all(repos.map(buildCardData));
+  return results.filter((c): c is RepoCardData => c !== null);
+}
+
+// 모든 저장소에서 사용되는 topic 목록 수집 (필터 드롭다운용)
+export function collectTopics(cards: RepoCardData[]): string[] {
+  const set = new Set<string>();
+  for (const c of cards) {
+    for (const t of c.topics) set.add(t);
+  }
+  return Array.from(set).sort();
+}
+
+// 상세 페이지 라우트용: 대상 저장소의 메타데이터 목록 (getStaticPaths)
+// README가 없어서 카드에서 제외된 저장소는 상세 페이지도 생성하지 않음
+export async function getDetailRouteList(): Promise<Array<{ name: string; defaultBranch: string }>> {
+  const repos = await fetchTargetRepos();
+  const checks = await Promise.all(
+    repos.map(async (r) => {
+      const readme = await fetchReadme(r.name);
+      return readme ? { name: r.name, defaultBranch: r.default_branch } : null;
+    })
+  );
+  return checks.filter((r): r is { name: string; defaultBranch: string } => r !== null);
+}
+
+// Download URL 결정 (하이브리드)
+// 1) repo-overrides.json의 downloadUrl
+// 2) Latest Release의 첫 번째 asset.browser_download_url
+// 3) 없으면 null (버튼 미표시)
+function resolveDownloadUrl(repoName: string, releases: GitHubRelease[]): string | null {
+  // overrides 우선
+  const override = overrides[repoName]?.downloadUrl;
+  if (override) return override;
+
+  // prerelease 포함, draft 제외 (API에서 이미 제외됨)
+  const latest = releases[0];
+  if (!latest || !latest.assets || latest.assets.length === 0) return null;
+
+  return latest.assets[0].browser_download_url;
+}
+
+// 상세 페이지 데이터 조립 (특정 저장소 1건)
+export async function getRepoDetail(repoName: string): Promise<RepoDetailData | null> {
+  const repos = await fetchTargetRepos();
+  const repo = repos.find((r) => r.name === repoName);
+  if (!repo) return null;
+
+  const [readme, releases] = await Promise.all([
+    fetchReadme(repoName),
+    fetchReleases(repoName),
+  ]);
+
+  if (!readme) return null;
+
+  const readmeHtml = renderMarkdown(readme, repoName, repo.default_branch);
+  const downloadUrl = resolveDownloadUrl(repoName, releases);
+
+  return {
+    name: repo.name,
+    description: repo.description,
+    url: repo.html_url,
+    defaultBranch: repo.default_branch,
+    readmeHtml,
+    releases,
+    downloadUrl,
+  };
+}

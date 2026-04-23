@@ -1,0 +1,20 @@
+---
+// 전역 하단 푸터
+// 메인 페이지와 상세 페이지 공통 (Layout.astro에 포함)
+// 가운데: 저작권 / 오른쪽: 문의 이메일 (아이콘 + mailto 링크)
+---
+
+<footer class="mt-8 pt-8 pb-8 border-t border-white/10 px-8">
+  <div class="relative max-w-[1440px] mx-auto flex items-center justify-center">
+    <p class="text-xs text-white/40 tracking-wider">
+      © 2026 BITLEADER CORP.
+    </p>
+    <a
+      href="mailto:QnA@bitleader.co.kr"
+      class="absolute right-0 flex items-center gap-1.5 text-xs text-white/40 hover:text-cyan-400 transition-colors"
+    >
+      <span class="material-symbols-outlined text-[16px] leading-none">mail</span>
+      QnA@bitleader.co.kr
+    </a>
+  </div>
+</footer>

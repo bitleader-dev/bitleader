@@ -1,0 +1,37 @@
+---
+// 상세 페이지 우측 하단 액션 버튼
+// - 다운로드: downloadUrl 있을 때만 표시 (primary 시안)
+// - GitHub 저장소: 항상 표시 (outline, 저장소 URL로 이동)
+
+interface Props {
+  downloadUrl: string | null;
+  repoUrl: string;
+}
+
+const { downloadUrl, repoUrl } = Astro.props;
+---
+
+<div class="space-y-4">
+  {
+    downloadUrl && (
+      <a
+        href={downloadUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="w-full flex items-center justify-center gap-2 bg-primary-container text-on-primary-container px-10 py-4 rounded-lg font-bold shadow-[0_0_20px_rgba(0,240,255,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
+      >
+        <span class="material-symbols-outlined">download</span>
+        다운로드
+      </a>
+    )
+  }
+  <a
+    href={repoUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    class="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white px-8 py-4 rounded-lg font-bold hover:bg-white/10 transition-all"
+  >
+    <span class="material-symbols-outlined">terminal</span>
+    GitHub 저장소
+  </a>
+</div>

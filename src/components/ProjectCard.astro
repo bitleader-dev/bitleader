@@ -1,0 +1,76 @@
+---
+// 저장소 카드 1개
+// 참고: code.html의 project card 구조
+// - 이미지 영역은 항상 h-48 유지
+// - README에 이미지가 없거나 로딩 실패 시 public/Thumbnail.png 기본 이미지로 폴백
+// 카드 전체가 저장소 URL로 이동하는 링크 역할
+// 클라이언트 필터링용 data-* 속성 임베드
+
+import type { RepoCardData } from '../lib/types';
+
+interface Props {
+  card: RepoCardData;
+}
+
+const { card } = Astro.props;
+
+// 본문에 표시할 설명: description 우선, 없으면 README 요약
+const bodyText = card.description?.trim() || card.summary || '';
+
+// chip 2개: 언어 + 첫 번째 topic (없으면 생략)
+const chips: string[] = [];
+if (card.language) chips.push(card.language);
+if (card.topics.length > 0) chips.push(card.topics[0]);
+
+// 필터/정렬용 데이터 속성
+const topicsAttr = card.topics.join(',');
+
+// 내부 상세 페이지 링크 (BASE_URL + 저장소 원본 이름)
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const detailHref = `${base}/${card.name}`;
+
+// 이미지 폴백 처리: README 이미지 없을 때 / 원격 이미지 로딩 실패 시 모두 기본 이미지로 대체
+const fallbackImage = `${base}/Thumbnail.png`;
+const cardImage = card.imageUrl ?? fallbackImage;
+const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
+---
+
+<a
+  href={detailHref}
+  class="repo-card md:col-span-4 glass-panel rounded-xl overflow-hidden group hover:micro-border hover:neon-glow transition-all block"
+  data-name={card.name.toLowerCase()}
+  data-description={(card.description ?? '').toLowerCase()}
+  data-topics={topicsAttr}
+  data-stars={card.stars}
+  data-updated={card.updatedAt}
+  data-created={card.createdAt}
+>
+  <div class="h-48 overflow-hidden">
+    <img
+      class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+      src={cardImage}
+      alt={card.name}
+      loading="lazy"
+      onerror={onImageError}
+    />
+  </div>
+  <div class="p-6">
+    <h4 class="font-headline-md text-base text-white">{card.name}</h4>
+    {
+      bodyText && (
+        <p class="text-zinc-400 text-sm mt-2 line-clamp-2">{bodyText}</p>
+      )
+    }
+    {
+      chips.length > 0 && (
+        <div class="mt-4 flex gap-2 flex-wrap">
+          {chips.map((c) => (
+            <span class="text-[10px] border border-white/10 px-2 py-0.5 rounded text-zinc-500 uppercase">
+              {c}
+            </span>
+          ))}
+        </div>
+      )
+    }
+  </div>
+</a>
