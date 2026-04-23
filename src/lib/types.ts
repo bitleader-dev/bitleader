@@ -37,6 +37,8 @@ export interface RepoCardData {
   createdAt: string;
   imageUrl: string | null; // README 첫 이미지 (없으면 null)
   summary: string; // README 180자 요약
+  archived: boolean; // GitHub 저장소 archived 플래그
+  fork: boolean; // 다른 저장소의 fork 여부
 }
 
 // GitHub Release Asset (릴리스에 첨부된 바이너리 파일)
@@ -77,3 +79,12 @@ export interface RepoOverride {
 }
 
 export type RepoOverridesMap = Record<string, RepoOverride>;
+
+// 최근 릴리스 피드에 사용하는 정규화 아이템 (빌드 타임 수집)
+export interface RecentReleaseItem {
+  repoName: string;
+  tag: string;
+  title: string;
+  publishedAt: string; // ISO 문자열
+  url: string; // GitHub release html_url
+}

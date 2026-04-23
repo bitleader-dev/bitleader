@@ -2,8 +2,12 @@
 // 카드 렌더링용 RepoCardData 배열로 정규화
 // 또한 상세 페이지용 RepoDetailData 조립 (README 전문 HTML + Releases + Download URL)
 
-import { fetchPublicRepos, fetchReadme, fetchReleases } from './github';
+import { fetchPublicRepos, fetchReadme, fetchReleases, mapLimit } from './github';
 import { extractFirstImage, extractSummary, renderMarkdown } from './readme';
+
+// GitHub API 동시 inflight 상한 (secondary rate limit ~100/min 회피).
+// 저장소 수가 N개로 늘어도 네트워크 호출은 이 값으로 제한되어 안정 빌드를 보장한다.
+const API_CONCURRENCY = 8;
 import overridesData from '../data/repo-overrides.json';
 import type {
   RepoCardData,
@@ -11,6 +15,7 @@ import type {
   GitHubRepo,
   GitHubRelease,
   RepoOverridesMap,
+  RecentReleaseItem,
 } from './types';
 
 // 홈페이지 자체 저장소 이름: 대시보드에서 본인을 표시하지 않도록 제외
@@ -39,6 +44,8 @@ async function buildCardData(repo: GitHubRepo): Promise<RepoCardData | null> {
     createdAt: repo.created_at,
     imageUrl,
     summary,
+    archived: repo.archived,
+    fork: repo.fork,
   };
 }
 
@@ -54,7 +61,7 @@ export async function getAllRepoCards(): Promise<RepoCardData[]> {
   const repos = await fetchTargetRepos();
   if (repos.length === 0) return [];
 
-  const results = await Promise.all(repos.map(buildCardData));
+  const results = await mapLimit(repos, API_CONCURRENCY, buildCardData);
   return results.filter((c): c is RepoCardData => c !== null);
 }
 
@@ -67,16 +74,41 @@ export function collectTopics(cards: RepoCardData[]): string[] {
   return Array.from(set).sort();
 }
 
+// 전체 대상 저장소의 릴리스를 수집해 발행일 기준 최신 N개 반환 (메인 페이지 하이라이트용)
+// - fetchReleases 는 Phase 2 메모이제이션으로 재호출 비용이 0
+// - 저장소별로 발행 기준 최신 limit 개만 먼저 추려 메모리 peak 을 낮춘다
+//   (100개 저장소 × 20 releases = 2000 items → 100 × limit items 로 축소)
+export async function collectRecentReleases(limit = 3): Promise<RecentReleaseItem[]> {
+  const repos = await fetchTargetRepos();
+  const perRepoTop = await mapLimit(repos, API_CONCURRENCY, async (r) => {
+    const rs = await fetchReleases(r.name);
+    const filtered: RecentReleaseItem[] = [];
+    for (const rel of rs) {
+      if (rel.draft || !rel.published_at) continue;
+      filtered.push({
+        repoName: r.name,
+        tag: rel.tag_name,
+        title: rel.name?.trim() || rel.tag_name,
+        publishedAt: rel.published_at,
+        url: rel.html_url,
+      });
+    }
+    filtered.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+    return filtered.slice(0, limit);
+  });
+  const merged = perRepoTop.flat();
+  merged.sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
+  return merged.slice(0, limit);
+}
+
 // 상세 페이지 라우트용: 대상 저장소의 메타데이터 목록 (getStaticPaths)
 // README가 없어서 카드에서 제외된 저장소는 상세 페이지도 생성하지 않음
 export async function getDetailRouteList(): Promise<Array<{ name: string; defaultBranch: string }>> {
   const repos = await fetchTargetRepos();
-  const checks = await Promise.all(
-    repos.map(async (r) => {
-      const readme = await fetchReadme(r.name);
-      return readme ? { name: r.name, defaultBranch: r.default_branch } : null;
-    })
-  );
+  const checks = await mapLimit(repos, API_CONCURRENCY, async (r) => {
+    const readme = await fetchReadme(r.name);
+    return readme ? { name: r.name, defaultBranch: r.default_branch } : null;
+  });
   return checks.filter((r): r is { name: string; defaultBranch: string } => r !== null);
 }
 

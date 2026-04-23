@@ -5,8 +5,9 @@
 // - 중앙: BIT LEADER 로고
 // - 우측: 언어 선택 드롭다운
 import LanguageSwitch from '../LanguageSwitch.astro';
+import { withBase } from '../../lib/paths';
 
-const homeHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/`;
+const homeHref = withBase('/');
 ---
 
 <header

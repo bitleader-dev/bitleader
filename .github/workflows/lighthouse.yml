@@ -1,0 +1,29 @@
+# Lighthouse CI: 배포 후 공개 URL 에 대해 성능/접근성/SEO/모범사례 점수 측정
+# - deploy 워크플로우 완료 후 자동 실행 (workflow_run)
+# - 결과는 Actions summary + artifact 로 남김
+# - 점수 하한선은 경고 수준 (실패로 막지 않음)
+
+name: Lighthouse CI
+
+on:
+  workflow_run:
+    workflows: ['Deploy to GitHub Pages']
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  lighthouse:
+    # deploy 가 성공했을 때만 실행 (또는 수동 트리거)
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Run Lighthouse CI
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            https://bitleader-dev.github.io/bitleader/
+          uploadArtifacts: true
+          temporaryPublicStorage: true

@@ -3,6 +3,36 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 전역 키보드 포커스 링 (focus-visible) — 시안 네온 색상으로 통일 */
+/* 마우스 클릭 시에는 나타나지 않고 Tab 등 키보드 포커스에만 표시되어 시각적 노이즈 최소화 */
+@layer base {
+  a:focus-visible,
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  [tabindex]:focus-visible,
+  summary:focus-visible {
+    outline: 2px solid #00f0ff;
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+}
+
+/* 북마크 버튼 활성 상태 — 별 아이콘을 채우고(FILL 1) 버튼 배경/테두리도 시안으로 강조 */
+/* hover 색상(시안)과 구분되도록 배경 틴트 + 테두리 + 글리프 fill 조합 사용 */
+@layer components {
+  .bookmark-btn[aria-pressed='true'] {
+    color: #00f0ff;
+    background: rgba(0, 240, 255, 0.15);
+    border-color: rgba(0, 240, 255, 0.5);
+  }
+  .bookmark-btn[aria-pressed='true'] .material-symbols-outlined {
+    /* Material Symbols Outlined 는 가변 폰트라 FILL 축 1 로 채워진 별로 전환됨 */
+    font-variation-settings: 'FILL' 1, 'wght' 700;
+  }
+}
+
 /* Lumina Dark 테마 커스텀 유틸리티 (code.html 이식) */
 @layer components {
   /* 글래스모피즘 패널: 반투명 배경 + 백드롭 블러 + 마이크로 보더 */

@@ -1,0 +1,58 @@
+---
+// 메인 페이지 상단의 "최근 릴리스" 하이라이트 섹션
+// - 빌드 타임에 collectRecentReleases() 로 수집한 상위 N개 릴리스 표시
+// - 각 아이템: 저장소명(상세 페이지 링크) + 태그 + 발행일(상대) + 릴리스 노트 외부 링크
+// - 항목이 0개면 섹션 자체를 렌더링하지 않음 (부모에서 조건부 렌더 권장)
+
+import type { RecentReleaseItem } from '../lib/types';
+import { withBase } from '../lib/paths';
+
+interface Props {
+  items: RecentReleaseItem[];
+}
+
+const { items } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <section class="mb-8">
+      <h3
+        class="text-zinc-500 font-label-md uppercase tracking-wider mb-3"
+        data-i18n="recent_releases_heading"
+      >
+        최근 릴리스
+      </h3>
+      <ul class="grid grid-cols-1 md:grid-cols-12 gap-3">
+        {items.map((item) => (
+          <li class="md:col-span-4 glass-panel rounded-lg p-4 hover:micro-border transition-all">
+            <a
+              href={withBase(`/${item.repoName}`)}
+              class="flex items-baseline gap-2 text-white hover:text-[#00F0FF] transition-colors"
+            >
+              <span class="text-sm font-semibold truncate">{item.repoName}</span>
+              <span class="text-[10px] text-[#00F0FF] border border-[#00F0FF]/30 rounded px-1.5 py-0.5 font-mono shrink-0">
+                {item.tag}
+              </span>
+            </a>
+            <p class="text-xs text-zinc-400 mt-1 line-clamp-1">{item.title}</p>
+            <div class="flex items-center justify-between mt-2">
+              <span class="text-[11px] text-zinc-500" data-iso={item.publishedAt}>
+                {item.publishedAt.slice(0, 10)}
+              </span>
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-[11px] text-zinc-500 hover:text-[#00F0FF] transition-colors inline-flex items-center gap-0.5"
+                data-i18n="releases_notes_link"
+              >
+                릴리스 노트
+              </a>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}

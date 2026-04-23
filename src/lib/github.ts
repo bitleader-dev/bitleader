@@ -1,5 +1,10 @@
 // GitHub API 호출 로직
 // 빌드 타임에 실행되며 .env의 GITHUB_TOKEN이 있으면 인증 요청, 없으면 비인증 폴백
+//
+// 빌드 1회 내 중복 호출 방지를 위한 모듈 스코프 메모이제이션:
+// - 같은 빌드에서 getAllRepoCards / getStaticPaths / getRepoDetail 이 각각 같은 URL 을 호출해도
+//   실제 네트워크 fetch 는 1번만 일어나도록 Promise 단위로 캐시한다
+// - 저장소 수가 늘어나면 빌드 시간·Rate Limit 부담이 선형 증가하므로 필수 최적화
 
 import type { GitHubRepo, GitHubReadme, GitHubRelease } from './types';
 
@@ -7,8 +12,61 @@ import type { GitHubRepo, GitHubReadme, GitHubRelease } from './types';
 const OWNER = 'bitleader-dev';
 const API_BASE = 'https://api.github.com';
 
+// MOCK_REPOS=1 일 때 로컬 fixture 로 대체 (페이지네이션·동시성·다중 Topic 등 UX 테스트용)
+// fixture 파일은 .gitignore 대상이라 환경에 따라 없을 수 있음 → 로드 실패 시 실제 API 폴백
+// Astro SSG 는 Node 런타임이라 process.env 로 직접 읽는 것이 가장 확실 (Vite 의 import.meta.env 는 PUBLIC_ prefix 규칙 적용됨)
+const USE_MOCK = process.env.MOCK_REPOS === '1';
+
+type MockFixtures = {
+  makeMockRepos: (count?: number) => GitHubRepo[];
+  makeMockReadme: (repoName: string) => string;
+  makeMockReleases: (repoName: string) => GitHubRelease[];
+};
+
+let mockFixturesPromise: Promise<MockFixtures | null> | null = null;
+function loadMockFixtures(): Promise<MockFixtures | null> {
+  if (mockFixturesPromise) return mockFixturesPromise;
+  mockFixturesPromise = (async () => {
+    try {
+      // Vite 의 정적 분석을 건너뛰어 fixture 미존재 환경(Actions 러너 등)에서도 안전
+      const mod = (await import(/* @vite-ignore */ '../test-fixtures/mock-repos')) as MockFixtures;
+      console.log('[github] MOCK_REPOS=1 감지 — fixture 30개 저장소로 빌드합니다.');
+      return mod;
+    } catch (err) {
+      console.warn(
+        '[github] MOCK_REPOS=1 이지만 fixture 파일이 없습니다. 실제 GitHub API 로 폴백:',
+        (err as Error).message,
+      );
+      return null;
+    }
+  })();
+  return mockFixturesPromise;
+}
+
+// 네트워크/Rate Limit 실패 시 던지는 전용 에러 — 상위 빌드 가드에서 구분용
+export class GitHubFetchError extends Error {
+  status: number;
+  url: string;
+  constructor(message: string, status: number, url: string) {
+    super(message);
+    this.name = 'GitHubFetchError';
+    this.status = status;
+    this.url = url;
+  }
+}
+
+// 404 를 "정상적인 없음"으로 취급할지 제어하는 옵션
+interface FetchOptions {
+  notFoundIsNull?: boolean; // true 면 404 시 null 반환 (기본값)
+}
+
 // 공통 fetch 헬퍼: 토큰 자동 주입 + 에러 처리
-async function githubFetch<T>(url: string): Promise<T | null> {
+// 반환: 성공 시 { data, response }, 404 면 { data: null, response }
+async function githubFetch<T>(
+  url: string,
+  opts: FetchOptions = {},
+): Promise<{ data: T | null; response: Response }> {
+  const { notFoundIsNull = true } = opts;
   const token = import.meta.env.GITHUB_TOKEN ?? process.env.GITHUB_TOKEN;
 
   const headers: Record<string, string> = {
@@ -22,58 +80,152 @@ async function githubFetch<T>(url: string): Promise<T | null> {
 
   try {
     const res = await fetch(url, { headers });
-    // 404는 정상적인 "없음" 응답으로 간주 (README 미존재 등)
     if (res.status === 404) {
-      return null;
+      if (notFoundIsNull) return { data: null, response: res };
+      throw new GitHubFetchError(`404 Not Found`, 404, url);
     }
     if (!res.ok) {
-      console.error(`[github] ${res.status} ${res.statusText} for ${url}`);
-      // Rate Limit 감지 시 경고
       const remaining = res.headers.get('x-ratelimit-remaining');
-      if (remaining === '0') {
+      const rateLimited = remaining === '0';
+      console.error(`[github] ${res.status} ${res.statusText} for ${url}`);
+      if (rateLimited) {
         console.error('[github] Rate limit exceeded. Set GITHUB_TOKEN in .env to increase limit.');
       }
-      return null;
+      throw new GitHubFetchError(
+        `${res.status} ${res.statusText}${rateLimited ? ' (rate limit)' : ''}`,
+        res.status,
+        url,
+      );
     }
-    return (await res.json()) as T;
+    const data = (await res.json()) as T;
+    return { data, response: res };
   } catch (err) {
+    if (err instanceof GitHubFetchError) throw err;
     console.error(`[github] fetch error for ${url}:`, err);
-    return null;
+    throw new GitHubFetchError(`network error: ${(err as Error).message}`, 0, url);
   }
 }
 
-// public 저장소 목록 조회 (최대 100개)
-// 정렬은 클라이언트에서 수행하므로 여기서는 기본값 사용
-export async function fetchPublicRepos(): Promise<GitHubRepo[]> {
-  const url = `${API_BASE}/users/${OWNER}/repos?type=public&per_page=100&sort=updated`;
-  const data = await githubFetch<GitHubRepo[]>(url);
-  if (!data) return [];
-  return data;
+// 얇은 래퍼: 데이터만 필요할 때 사용
+async function githubFetchData<T>(
+  url: string,
+  opts: FetchOptions = {},
+): Promise<T | null> {
+  return (await githubFetch<T>(url, opts)).data;
+}
+
+// GitHub Link 헤더에서 rel="next" URL 을 파싱한다.
+// 예: `<https://api.github.com/.../repos?page=2>; rel="next", <...>; rel="last"`
+function parseNextLink(linkHeader: string | null): string | null {
+  if (!linkHeader) return null;
+  for (const part of linkHeader.split(',')) {
+    const m = part.match(/<([^>]+)>\s*;\s*rel="next"/);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// 배열을 동시성 limit 로 순회. Promise.all 의 무제한 동시 fetch 를 대체해
+// GitHub secondary rate limit(약 100 동시/분) 을 피한다.
+export async function mapLimit<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, idx: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array(Math.min(Math.max(1, limit), items.length))
+    .fill(0)
+    .map(async () => {
+      while (true) {
+        const i = next++;
+        if (i >= items.length) return;
+        results[i] = await fn(items[i], i);
+      }
+    });
+  await Promise.all(workers);
+  return results;
+}
+
+// ---------- 모듈 스코프 메모이제이션 (빌드 1회 내 공유) ----------
+// Promise 자체를 저장해 동시 호출도 단일 inflight 로 처리된다
+let reposPromise: Promise<GitHubRepo[]> | null = null;
+const readmeCache = new Map<string, Promise<string | null>>();
+const releasesCache = new Map<string, Promise<GitHubRelease[]>>();
+
+// public 저장소 목록 전수 조회 (Link 헤더 기반 페이지네이션으로 100개 초과 지원)
+// 정렬은 클라이언트에서 수행하므로 여기서는 updated 기준 기본값 사용
+export function fetchPublicRepos(): Promise<GitHubRepo[]> {
+  if (reposPromise) return reposPromise;
+  const firstUrl = `${API_BASE}/users/${OWNER}/repos?type=public&per_page=100&sort=updated`;
+  reposPromise = (async () => {
+    if (USE_MOCK) {
+      const fx = await loadMockFixtures();
+      if (fx) return fx.makeMockRepos();
+    }
+    const acc: GitHubRepo[] = [];
+    let nextUrl: string | null = firstUrl;
+    // 저장소 수가 늘어도 자동으로 전수 수집되도록 Link rel="next" 를 따라 순차 fetch
+    while (nextUrl) {
+      const { data, response } = await githubFetch<GitHubRepo[]>(nextUrl);
+      if (!data) break;
+      acc.push(...data);
+      nextUrl = parseNextLink(response.headers.get('Link'));
+    }
+    return acc;
+  })();
+  return reposPromise;
 }
 
 // README 조회 (base64 디코딩된 raw markdown 반환)
-export async function fetchReadme(repoName: string): Promise<string | null> {
-  const url = `${API_BASE}/repos/${OWNER}/${repoName}/readme`;
-  const data = await githubFetch<GitHubReadme>(url);
-  if (!data || data.encoding !== 'base64') return null;
+// 개별 저장소 README 페칭 실패는 해당 저장소만 카드에서 제외하도록 null 로 복구
+// (전체 빌드가 하나의 일시 장애로 무너지는 것을 방지)
+export function fetchReadme(repoName: string): Promise<string | null> {
+  const cached = readmeCache.get(repoName);
+  if (cached) return cached;
 
-  // base64 → UTF-8 문자열 변환 (Node 환경)
-  try {
-    return Buffer.from(data.content, 'base64').toString('utf-8');
-  } catch (err) {
-    console.error(`[github] README decode failed for ${repoName}:`, err);
-    return null;
-  }
+  const url = `${API_BASE}/repos/${OWNER}/${repoName}/readme`;
+  const p = (async () => {
+    if (USE_MOCK) {
+      const fx = await loadMockFixtures();
+      if (fx) return fx.makeMockReadme(repoName);
+    }
+    try {
+      const data = await githubFetchData<GitHubReadme>(url);
+      if (!data || data.encoding !== 'base64') return null;
+      return Buffer.from(data.content, 'base64').toString('utf-8');
+    } catch (err) {
+      console.error(`[github] README fetch failed for ${repoName}, skipping:`, err);
+      return null;
+    }
+  })();
+  readmeCache.set(repoName, p);
+  return p;
 }
 
 // 릴리스 목록 조회 (최신 순, 최대 20개)
 // draft 릴리스는 API 상 인증 필요하므로 기본 제외됨
-export async function fetchReleases(repoName: string): Promise<GitHubRelease[]> {
+// 개별 저장소 릴리스 페칭 실패는 빈 배열로 복구 — 상세 페이지는 "등록된 릴리스가 없습니다" 로 유지됨
+export function fetchReleases(repoName: string): Promise<GitHubRelease[]> {
+  const cached = releasesCache.get(repoName);
+  if (cached) return cached;
+
   const url = `${API_BASE}/repos/${OWNER}/${repoName}/releases?per_page=20`;
-  const data = await githubFetch<GitHubRelease[]>(url);
-  if (!data) return [];
-  // prerelease는 포함, draft는 API에서 이미 걸러짐
-  return data;
+  const p = (async () => {
+    if (USE_MOCK) {
+      const fx = await loadMockFixtures();
+      if (fx) return fx.makeMockReleases(repoName);
+    }
+    try {
+      const data = await githubFetchData<GitHubRelease[]>(url);
+      return data ?? [];
+    } catch (err) {
+      console.error(`[github] releases fetch failed for ${repoName}, using empty list:`, err);
+      return [];
+    }
+  })();
+  releasesCache.set(repoName, p);
+  return p;
 }
 
 export { OWNER };

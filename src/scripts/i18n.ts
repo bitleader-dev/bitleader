@@ -3,6 +3,7 @@
 // - 지원 속성:
 //   - data-i18n="key"                : textContent 교체
 //   - data-i18n-placeholder="key"    : placeholder 속성 교체
+//   - data-i18n-arialabel="key"      : aria-label 속성 교체
 //   - data-iso="2025-01-01T..."      : 상대 시간 포맷으로 textContent 교체
 //   - data-i18n-tpl="key"            : 템플릿, 변수는 data-i18n-var-<name> 로 수집
 // - 언어 변경 이벤트(`langchange`)를 window 에 dispatch 하여 filter.ts 등이 재계산 가능
@@ -47,13 +48,17 @@ function applyLang(lang: LangCode) {
   document.documentElement.lang = lang;
 
   // 단일 스캔: 관련 속성 중 하나라도 가진 요소를 한 번에 모아 분기 처리
-  const selector = '[data-i18n],[data-i18n-placeholder],[data-iso],[data-i18n-tpl]';
+  const selector =
+    '[data-i18n],[data-i18n-placeholder],[data-i18n-arialabel],[data-iso],[data-i18n-tpl]';
   document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
     const textKey = el.dataset.i18n as keyof typeof dict | undefined;
     if (textKey && dict[textKey]) el.textContent = dict[textKey];
 
     const phKey = el.dataset.i18nPlaceholder as keyof typeof dict | undefined;
     if (phKey && dict[phKey]) el.setAttribute('placeholder', dict[phKey]);
+
+    const arKey = el.dataset.i18nArialabel as keyof typeof dict | undefined;
+    if (arKey && dict[arKey]) el.setAttribute('aria-label', dict[arKey]);
 
     const iso = el.dataset.iso;
     if (iso) el.textContent = formatRelative(iso, lang, now);

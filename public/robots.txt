@@ -1,0 +1,7 @@
+# BIT LEADER Dashboard robots policy
+# 전체 크롤링 허용. 민감 경로 없음 (정적 SSG).
+User-agent: *
+Allow: /
+
+# Sitemap 위치 (Astro sitemap 통합이 자동 생성)
+Sitemap: https://bitleader-dev.github.io/bitleader/sitemap-index.xml

@@ -16,9 +16,14 @@
 - **README 파싱**: 각 저장소 README에서 첫 이미지 + 180자 요약 자동 추출
 - **카드 이미지 폴백**: README에 이미지가 없거나 원격 이미지 로딩 실패 시 `public/Thumbnail.png` 기본 이미지 표시
 - **카드 대시보드**: 12-column 반응형 그리드 (데스크톱 3열 / 태블릿 2열 / 모바일 1열)
-- **검색**: 저장소 이름 + description 대상 실시간 검색
-- **필터**: Topic 기준 드롭다운 필터
+- **카드 배지**: 저장소가 `archived` / `fork` 인 경우 카드 우상단에 배지 자동 표시
+- **북마크**: 카드 좌상단 별(★) 버튼으로 즐겨찾기 토글 — 북마크된 저장소는 정렬 결과의 **최상단으로 고정**. 상태는 브라우저 `localStorage` 에 보관 (서버 저장 X)
+- **최근 릴리스**: 히어로 바로 아래에 전체 저장소 중 **최근 발행된 릴리스 3건** 자동 하이라이트
+- **검색**: 저장소 이름 + description + Topics 대상 실시간 검색
+- **필터**: Topic **다중 선택 (AND 조합)** — 여러 topic 을 체크하면 **모두 포함한** 카드만 남음
 - **정렬**: 최근 업데이트순 / 스타순 / 이름순 / 생성일순 (4가지)
+- **URL 공유**: 현재 검색/필터/정렬/페이지 상태가 URL 쿼리(`?q=&topic=&sort=&page=`)에 자동 반영되어 **링크로 필터 결과 공유 가능**
+- **페이지네이션**: 저장소 수가 12개를 초과하면 자동으로 페이지 네비게이션이 노출 (12개 이하는 한 번에 전체 표시)
 - **자동 갱신**: GitHub Actions 스케줄로 **매일 UTC 00:00 (= KST 09:00)** 자동 재빌드 + 배포 (GitHub 부하에 따라 최대 10~30분 지연 가능). push / 수동 실행 / cron 조정도 지원 — "배포", "사이트 업데이트 주기" 섹션 참고
 
 ### 상세 페이지 (저장소별)
@@ -34,6 +39,22 @@
 - 홈페이지 자체 저장소(`bitleader`)는 카드에서 제외
 - README.md 파일이 없는 저장소는 카드에서 제외
 
+### SEO / 공유 관련
+- **sitemap.xml**: `@astrojs/sitemap` 이 빌드 타임에 자동 생성 (`/bitleader/sitemap-index.xml`)
+- **robots.txt**: 전체 크롤링 허용 + sitemap 위치 명시 (`public/robots.txt`)
+- **RSS 피드**: 전체 저장소의 최신 릴리스 20건을 `/bitleader/rss.xml` 로 노출. `Layout.astro` head 에 `<link rel="alternate" type="application/rss+xml">` 를 주입하여 브라우저·RSS 리더가 자동 발견. 의존성 없이 순수 XML 문자열로 생성(`src/pages/rss.xml.ts`)
+- **keywords 메타**: 전역 `<meta name="keywords">` 로 핵심 키워드(Bitleader/GitHub/대시보드/릴리스 등) 명시
+- **canonical / Open Graph / X(구 Twitter) Card**: 각 페이지별로 절대 URL 주입 — **저장소 상세 페이지를 메신저·SNS 에 붙여넣어도 해당 저장소 페이지 미리보기가 정확히 표시됨**. X 는 리브랜딩 후에도 `twitter:*` 메타 규격을 그대로 사용하므로 기존 태그 이름 유지
+- **저장소별 동적 OG 이미지**: `satori` + `@resvg/resvg-js` 로 빌드 타임에 저장소당 1장씩 1200×630 PNG 를 `/bitleader/og/<repo>.png` 로 생성. Lumina Dark 톤 + 저장소 이름(큰 폰트) + description + BIT LEADER 로고 구성. 상세 페이지 공유 시 이 이미지가 `og:image` 로 사용되어 SNS/메신저 미리보기에 저장소별로 구분된 카드가 노출됨.
+  - 영문 폰트: Google Fonts 에서 빌드 타임에 Inter(400/700) TTF/WOFF 를 1회 fetch 후 메모리 캐싱
+  - 한글 폰트: `@fontsource/noto-sans-kr` 번들의 korean 서브셋 WOFF 파일을 로컬에서 직접 로드 → 한글 description 도 Noto Sans KR 로 정상 렌더
+- **404 페이지**: 존재하지 않는 경로(`/bitleader/없는이름`) 접근 시 Lumina Dark 톤의 커스텀 404 페이지 (`src/pages/404.astro`) 반환
+
+### 접근성 (a11y)
+- **스킵 링크**: 키보드 Tab 첫 포커스 시 좌상단에 "본문 바로가기" 버튼이 슬라이드-인되어 `<main id="main">` 랜드마크로 즉시 이동
+- **focus-visible 포커스 링**: 모든 인터랙티브 요소(링크·버튼·입력·드롭다운)에 키보드 포커스 전용 시안 아웃라인. 마우스 클릭에는 노이즈 없음
+- **aria-\* 보강**: 페이지네이션 prev/next `aria-label` + `#page-info` `aria-live="polite"`, Topic 필터 `aria-controls`/`aria-haspopup`/`aria-expanded`, 북마크 버튼 `aria-pressed`, 모든 aria-label 은 i18n 연동(언어 전환 시 자동 갱신)
+
 ---
 
 ## 기술 스택
@@ -43,8 +64,12 @@
 | 프레임워크 | Astro 5.x | 정적 사이트 생성 (SSG) |
 | 스타일 | Tailwind CSS 3.x | 유틸리티 기반 CSS |
 | Markdown | marked + sanitize-html | README 전문 렌더링 + XSS 방지 |
+| Sitemap | @astrojs/sitemap | 빌드 타임 sitemap.xml 자동 생성 |
+| OG 이미지 | satori + satori-html + @resvg/resvg-js (devDep) | 저장소별 Open Graph PNG 빌드 타임 생성 |
+| OG 한글 폰트 | @fontsource/noto-sans-kr (devDep) | OG 이미지에서 한글 description 렌더 |
 | 언어 | TypeScript 5.x (strict) | 타입 안전성 |
 | 배포 | GitHub Pages + GitHub Actions | 정적 호스팅 + CI/CD |
+| 품질 감시 | treosh/lighthouse-ci-action (Actions 전용) | 배포 후 성능/접근성/SEO 점수 측정 |
 | 폰트 | Google Fonts (Inter), Material Symbols Outlined | 본문 + 아이콘 |
 
 ---
@@ -54,36 +79,49 @@
 ```
 bitleader-dev-HomePage/
 ├── .github/workflows/
-│   └── deploy.yml                  # GitHub Pages 자동 배포 워크플로우
+│   ├── deploy.yml                  # GitHub Pages 자동 배포 워크플로우
+│   └── lighthouse.yml              # 배포 후 Lighthouse 성능/접근성/SEO 점수 측정
 ├── src/
 │   ├── layouts/
-│   │   └── Layout.astro            # 전역 레이아웃 (폰트, 메타)
+│   │   └── Layout.astro            # 전역 레이아웃 (폰트, 메타, canonical/OG URL 동적)
 │   ├── pages/
-│   │   ├── index.astro             # 메인 대시보드
-│   │   └── [repo].astro            # 저장소 상세 페이지 (동적 라우트)
+│   │   ├── index.astro             # 메인 대시보드 (+ 페이지네이션 컨테이너)
+│   │   ├── [repo].astro            # 저장소 상세 페이지 (+ Back to Top 버튼)
+│   │   ├── 404.astro               # 커스텀 404 페이지
+│   │   ├── rss.xml.ts              # 전체 저장소 최신 릴리스 RSS 피드
+│   │   └── og/[repo].png.ts        # 저장소별 동적 OG 이미지 (satori)
 │   ├── components/
-│   │   ├── Header.astro            # 상단 고정 내비 + 검색 바
+│   │   ├── Header.astro            # 상단 고정 내비 + 검색 바 (aria-label 적용)
 │   │   ├── DashboardHero.astro     # 메인 상단 히어로 (한글 문구)
-│   │   ├── FilterBar.astro         # Topic 필터 + 정렬 드롭다운
-│   │   ├── ProjectCard.astro       # 저장소 카드 (→ 상세 페이지 링크)
+│   │   ├── RecentReleases.astro    # 최근 릴리스 3건 하이라이트
+│   │   ├── FilterBar.astro         # Topic 다중 체크박스 드롭다운 + 정렬
+│   │   ├── ProjectCard.astro       # 저장소 카드 (북마크 버튼 + archived/fork 배지)
 │   │   └── detail/
 │   │       ├── DetailHeader.astro  # 홈으로 버튼 + 로고
 │   │       ├── ReadmePanel.astro   # README 전문 (sanitize된 HTML 주입)
 │   │       ├── ReleasesCard.astro  # 릴리스 카드 (최신 + 과거 2개)
 │   │       └── ActionButtons.astro # 다운로드 / GitHub 저장소 버튼
 │   ├── lib/
-│   │   ├── github.ts               # GitHub API 호출 (저장소/README/Releases)
+│   │   ├── github.ts               # GitHub API 호출 (모듈 스코프 메모이제이션 + GitHubFetchError)
 │   │   ├── readme.ts               # Markdown 파싱 (이미지/요약/HTML 렌더링)
-│   │   ├── data.ts                 # 카드 및 상세 데이터 조립
+│   │   ├── data.ts                 # 카드/상세/최근 릴리스 데이터 조립
+│   │   ├── og.ts                   # 동적 OG 이미지 생성 (satori + @resvg/resvg-js)
 │   │   └── types.ts                # TypeScript 타입 정의
+│   ├── i18n/
+│   │   ├── ko.json                 # 한국어 번역 사전
+│   │   ├── en.json                 # 영어 번역 사전
+│   │   └── dictionary.ts           # 공용 i18n 유틸 (formatTpl/formatRelative 등)
 │   ├── data/
 │   │   └── repo-overrides.json     # 저장소별 커스텀 메타 (Download URL 등)
 │   ├── scripts/
-│   │   └── filter.ts               # 클라이언트 검색/필터/정렬
+│   │   ├── filter.ts               # 검색/Topic 다중/정렬/북마크/페이지네이션/URL 동기화
+│   │   └── i18n.ts                 # 클라이언트 사이드 언어 전환 런타임
 │   └── styles/
 │       └── global.css              # Tailwind + glass-panel/prose-dark 유틸
 ├── public/
-│   └── Thumbnail.png               # 카드 이미지 폴백 (README 이미지 없을 때 표시)
+│   ├── Thumbnail.png               # 카드 이미지 폴백 (README 이미지 없을 때 표시)
+│   ├── favicon.svg                 # SVG 파비콘 (시안 배경 + BL 모노그램)
+│   └── robots.txt                  # 크롤러 정책 (sitemap 위치 명시)
 ├── .env.example                    # PAT 템플릿 (커밋 O)
 ├── .env                            # 로컬 전용 토큰 (커밋 X)
 ├── .gitignore
@@ -375,6 +413,7 @@ UI 는 **한국어 / English** 두 언어를 지원합니다.
 2. 컴포넌트에 아래 중 하나로 속성 부여:
    - `data-i18n="key"` — `textContent` 교체 (가장 흔함)
    - `data-i18n-placeholder="key"` — `placeholder` 속성 교체
+   - `data-i18n-arialabel="key"` — `aria-label` 속성 교체 (접근성)
    - `data-i18n-tpl="key" data-i18n-var-<name>="value"` — 템플릿 `{<name>}` 치환
    - `data-iso="2025-01-01T..."` — 상대 시간 포맷으로 `textContent` 교체
 3. `src/scripts/i18n.ts` 가 자동 스캔하므로 별도 등록 불필요

@@ -24,13 +24,15 @@ export async function getStaticPaths() {
 }
 
 const { detail } = Astro.props;
-const pageTitle = `${detail.name} — Bitleader`;
+const pageTitle = `${detail.name} — BIT LEADER`;
+// 저장소별 동적 OG 이미지 경로 (빌드 타임에 /og/<repo>.png 로 생성됨)
+const ogImagePath = `/og/${detail.name}.png`;
 ---
 
-<Layout title={pageTitle} description={detail.description ?? undefined}>
+<Layout title={pageTitle} description={detail.description ?? undefined} ogImagePath={ogImagePath}>
   <DetailHeader />
 
-  <main class="pt-16 min-h-screen">
+  <main id="main" class="pt-16 min-h-screen">
     <div class="max-w-[1440px] mx-auto px-8 py-12">
       <!-- Breadcrumb -->
       <div class="flex items-center gap-2 mb-8 text-white/40 font-label-md">
@@ -51,4 +53,34 @@ const pageTitle = `${detail.name} — Bitleader`;
       </div>
     </div>
   </main>
+
+  <!-- Back to Top: 300px 이상 스크롤 시 우하단 표시, 클릭 시 상단으로 smooth scroll -->
+  <button
+    id="back-to-top"
+    type="button"
+    class="fixed right-6 bottom-6 z-40 w-11 h-11 rounded-full bg-zinc-900/80 border border-white/10 backdrop-blur-sm text-white/60 hover:text-[#00F0FF] hover:border-[#00F0FF]/40 flex items-center justify-center shadow-lg opacity-0 pointer-events-none translate-y-2 transition-all"
+    aria-label="맨 위로"
+    data-i18n-arialabel="back_to_top"
+  >
+    <span class="material-symbols-outlined text-[20px]">keyboard_arrow_up</span>
+  </button>
+
+  <script is:inline>
+    (function () {
+      var btn = document.getElementById('back-to-top');
+      if (!btn) return;
+      var update = function () {
+        if (window.scrollY > 300) {
+          btn.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+        } else {
+          btn.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+        }
+      };
+      window.addEventListener('scroll', update, { passive: true });
+      btn.addEventListener('click', function () {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      update();
+    })();
+  </script>
 </Layout>

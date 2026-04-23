@@ -7,6 +7,7 @@
 // 클라이언트 필터링용 data-* 속성 임베드
 
 import type { RepoCardData } from '../lib/types';
+import { withBase } from '../lib/paths';
 
 interface Props {
   card: RepoCardData;
@@ -25,12 +26,10 @@ if (card.topics.length > 0) chips.push(card.topics[0]);
 // 필터/정렬용 데이터 속성
 const topicsAttr = card.topics.join(',');
 
-// 내부 상세 페이지 링크 (BASE_URL + 저장소 원본 이름)
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const detailHref = `${base}/${card.name}`;
+const detailHref = withBase(`/${card.name}`);
 
 // 이미지 폴백 처리: README 이미지 없을 때 / 원격 이미지 로딩 실패 시 모두 기본 이미지로 대체
-const fallbackImage = `${base}/Thumbnail.png`;
+const fallbackImage = withBase('/Thumbnail.png');
 const cardImage = card.imageUrl ?? fallbackImage;
 const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
 ---
@@ -44,8 +43,10 @@ const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
   data-stars={card.stars}
   data-updated={card.updatedAt}
   data-created={card.createdAt}
+  data-archived={card.archived ? '1' : '0'}
+  data-fork={card.fork ? '1' : '0'}
 >
-  <div class="h-48 overflow-hidden">
+  <div class="relative h-48 overflow-hidden">
     <img
       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
       src={cardImage}
@@ -53,6 +54,39 @@ const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
       loading="lazy"
       onerror={onImageError}
     />
+    <!-- 북마크 버튼 (상단 좌측) — 클릭 시 링크 이동 차단하고 localStorage 토글 -->
+    <button
+      type="button"
+      class="bookmark-btn absolute top-2 left-2 z-10 w-7 h-7 rounded-full bg-zinc-900/80 border border-white/10 backdrop-blur-sm flex items-center justify-center text-zinc-500 hover:text-[#00F0FF] transition-colors"
+      data-repo-name={card.name}
+      aria-pressed="false"
+      aria-label="북마크 추가"
+      data-i18n-arialabel="bookmark_add"
+    >
+      <span class="material-symbols-outlined text-[18px]">star</span>
+    </button>
+    {
+      (card.archived || card.fork) && (
+        <div class="absolute top-2 right-2 flex gap-1.5">
+          {card.archived && (
+            <span
+              class="text-[10px] px-2 py-0.5 rounded bg-zinc-900/80 border border-amber-400/40 text-amber-300 backdrop-blur-sm uppercase tracking-wider font-medium"
+              data-i18n="badge_archived"
+            >
+              보관됨
+            </span>
+          )}
+          {card.fork && (
+            <span
+              class="text-[10px] px-2 py-0.5 rounded bg-zinc-900/80 border border-white/20 text-zinc-300 backdrop-blur-sm uppercase tracking-wider font-medium"
+              data-i18n="badge_fork"
+            >
+              포크
+            </span>
+          )}
+        </div>
+      )
+    }
   </div>
   <div class="p-6">
     <h4 class="font-headline-md text-base text-white">{card.name}</h4>

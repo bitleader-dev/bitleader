@@ -8,18 +8,21 @@ import Header from '../components/Header.astro';
 import DashboardHero from '../components/DashboardHero.astro';
 import FilterBar from '../components/FilterBar.astro';
 import ProjectCard from '../components/ProjectCard.astro';
-import { getAllRepoCards, collectTopics } from '../lib/data';
+import RecentReleases from '../components/RecentReleases.astro';
+import { getAllRepoCards, collectTopics, collectRecentReleases } from '../lib/data';
 
 // 빌드 타임 데이터 페칭
 const cards = await getAllRepoCards();
 const topics = collectTopics(cards);
+const recentReleases = await collectRecentReleases(3);
 ---
 
 <Layout>
   <Header />
 
-  <main class="pt-24 px-8 pb-12 min-h-screen max-w-[1440px] mx-auto">
+  <main id="main" class="pt-24 px-8 pb-12 min-h-screen max-w-[1440px] mx-auto">
     <DashboardHero />
+    <RecentReleases items={recentReleases} />
     <FilterBar topics={topics} />
 
     {
@@ -33,6 +36,30 @@ const topics = collectTopics(cards);
         <div id="card-grid" class="grid grid-cols-1 md:grid-cols-12 gap-6">
           {cards.map((card) => <ProjectCard card={card} />)}
         </div>
+        <!-- 페이지네이션 (저장소 12개 초과 시에만 filter.ts 가 노출) -->
+        <nav
+          id="pagination"
+          class="hidden mt-8 flex items-center justify-center gap-4"
+          aria-label="페이지 네비게이션"
+        >
+          <button
+            id="page-prev"
+            type="button"
+            class="px-3 py-1.5 rounded border border-white/10 text-sm text-zinc-300 hover:text-[#00F0FF] hover:border-[#00F0FF]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            data-i18n="pagination_prev"
+            aria-label="이전 페이지"
+            data-i18n-arialabel="pagination_prev_aria"
+          >이전</button>
+          <span id="page-info" class="text-sm text-zinc-400" aria-live="polite"></span>
+          <button
+            id="page-next"
+            type="button"
+            class="px-3 py-1.5 rounded border border-white/10 text-sm text-zinc-300 hover:text-[#00F0FF] hover:border-[#00F0FF]/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            data-i18n="pagination_next"
+            aria-label="다음 페이지"
+            data-i18n-arialabel="pagination_next_aria"
+          >다음</button>
+        </nav>
       )
     }
   </main>

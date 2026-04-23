@@ -1,9 +1,9 @@
 ---
-// Topic 필터 + 정렬 드롭다운
-// 참고: stitch_dark_card_dashboard (6)/code.html 의 SORT BY select 스타일 이식
-// - 라벨 + select 가로 조합
-// - rounded(각진) + border border-white/10 + bg-surface-container-low
-// - focus 시 primary-container(#00F0FF) 테두리/링
+// Topic 필터 (다중 선택, AND 조합) + 정렬 드롭다운
+// - Topic 필터: 커스텀 드롭다운 (버튼 + 체크박스 목록 패널)
+//   - 여러 topic 을 동시에 선택하면 "모든 topic 을 가진" 카드만 남음 (AND)
+//   - 선택 개수는 버튼에 표시 (0개 = "전체 Topic", 1개 이상 = "N개 선택됨")
+// - 정렬 드롭다운: 기존 `<select>` 유지
 // 클라이언트 필터링 로직은 src/scripts/filter.ts 에서 처리
 
 interface Props {
@@ -14,26 +14,60 @@ const { topics } = Astro.props;
 ---
 
 <div class="flex flex-wrap items-center gap-6 mb-6">
-  <!-- Topic 필터 드롭다운 -->
+  <!-- Topic 다중 필터 -->
   <div class="relative min-w-[200px] flex items-center gap-3">
     <label
-      for="topic-filter"
+      for="topic-filter-toggle"
       class="text-zinc-500 font-label-md uppercase tracking-wider whitespace-nowrap"
       data-i18n="label_topic"
-      >Topic</label
     >
-    <div class="relative flex-1 group">
-      <select
-        id="topic-filter"
-        class="w-full appearance-none bg-surface-container-low border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-container/50 focus:ring-1 focus:ring-primary-container/20 transition-all cursor-pointer"
+      Topic
+    </label>
+    <div class="relative flex-1" id="topic-filter">
+      <button
+        id="topic-filter-toggle"
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded="false"
+        aria-controls="topic-filter-panel"
+        class="w-full flex items-center justify-between bg-surface-container-low border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-container/50 focus:ring-1 focus:ring-primary-container/20 transition-all cursor-pointer"
       >
-        <option class="bg-zinc-900" value="" data-i18n="topic_all">전체 Topic</option>
-        {topics.map((t) => <option class="bg-zinc-900" value={t}>{t}</option>)}
-      </select>
-      <span
-        class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none group-focus-within:text-primary-container"
-        >expand_more</span
-      >
+        <span id="topic-filter-label" data-i18n="topic_multi_placeholder">전체 Topic</span>
+        <span class="material-symbols-outlined text-zinc-500">expand_more</span>
+      </button>
+      {topics.length > 0 && (
+        <div
+          id="topic-filter-panel"
+          role="listbox"
+          aria-multiselectable="true"
+          class="hidden absolute top-full left-0 right-0 mt-1 max-h-64 overflow-y-auto bg-zinc-900 border border-white/10 rounded shadow-lg z-20"
+        >
+          <ul class="py-1">
+            {topics.map((t) => (
+              <li>
+                <label class="flex items-center gap-2 px-3 py-2 text-sm text-zinc-300 hover:bg-white/5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    class="topic-checkbox accent-[#00F0FF] w-3.5 h-3.5"
+                    value={t}
+                  />
+                  <span>{t}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <div class="border-t border-white/10 px-3 py-2 flex justify-end">
+            <button
+              id="topic-filter-clear"
+              type="button"
+              class="text-[11px] text-zinc-400 hover:text-[#00F0FF] transition-colors"
+              data-i18n="topic_clear"
+            >
+              초기화
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   </div>
 
@@ -43,8 +77,9 @@ const { topics } = Astro.props;
       for="sort-order"
       class="text-zinc-500 font-label-md uppercase tracking-wider whitespace-nowrap"
       data-i18n="label_sort"
-      >정렬</label
     >
+      정렬
+    </label>
     <div class="relative flex-1 group">
       <select
         id="sort-order"
@@ -57,8 +92,9 @@ const { topics } = Astro.props;
       </select>
       <span
         class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none group-focus-within:text-primary-container"
-        >expand_more</span
       >
+        expand_more
+      </span>
     </div>
   </div>
 

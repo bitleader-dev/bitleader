@@ -20,6 +20,9 @@ plan.md
 notes.md
 CLAUDE.md
 
+# 로컬 테스트용 mock fixture (MOCK_REPOS=1 로 사용, 커밋 제외)
+src/test-fixtures/
+
 # 로그
 npm-debug.log*
 yarn-debug.log*
