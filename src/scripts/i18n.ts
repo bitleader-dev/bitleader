@@ -1,11 +1,19 @@
 // 클라이언트 사이드 언어 전환 런타임
-// - 초기 언어: localStorage 'lang' > navigator.language > 'ko'
-// - DOM 의 data-i18n / data-i18n-attr / data-i18n-tpl / data-iso 를 스캔해 번역 적용
-// - 언어 변경 이벤트(`langchange`)를 window 에 dispatch 하여 filter.ts 등 다른 스크립트가 재계산 가능
+// - 초기 언어: localStorage STORAGE_KEY > navigator.language > 'ko'
+// - 지원 속성:
+//   - data-i18n="key"                : textContent 교체
+//   - data-i18n-placeholder="key"    : placeholder 속성 교체
+//   - data-iso="2025-01-01T..."      : 상대 시간 포맷으로 textContent 교체
+//   - data-i18n-tpl="key"            : 템플릿, 변수는 data-i18n-var-<name> 로 수집
+// - 언어 변경 이벤트(`langchange`)를 window 에 dispatch 하여 filter.ts 등이 재계산 가능
 
-import { dictionaries, formatRelative, formatTpl, type LangCode } from '../i18n/dictionary';
-
-const STORAGE_KEY = 'lang';
+import {
+  STORAGE_KEY,
+  dictionaries,
+  formatRelative,
+  formatTpl,
+  type LangCode,
+} from '../i18n/dictionary';
 
 function getInitialLang(): LangCode {
   try {
@@ -18,46 +26,42 @@ function getInitialLang(): LangCode {
   return nav.startsWith('en') ? 'en' : 'ko';
 }
 
+// data-i18n-var-<name> 속성만 수집 (dataset 키는 i18nVar<Name> 로 변환됨)
+const VAR_PREFIX = 'i18nVar';
+function collectVars(el: HTMLElement): Record<string, string> {
+  const vars: Record<string, string> = {};
+  for (const key in el.dataset) {
+    if (key.startsWith(VAR_PREFIX) && key.length > VAR_PREFIX.length) {
+      const rest = key.slice(VAR_PREFIX.length);
+      const name = rest.charAt(0).toLowerCase() + rest.slice(1);
+      vars[name] = el.dataset[key] ?? '';
+    }
+  }
+  return vars;
+}
+
 function applyLang(lang: LangCode) {
   const dict = dictionaries[lang];
+  const now = Date.now();
 
   document.documentElement.lang = lang;
-  document.documentElement.dataset.lang = lang;
 
-  // data-i18n: textContent 교체
-  document.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
-    const key = el.getAttribute('data-i18n') as keyof typeof dict | null;
-    if (key && dict[key]) el.textContent = dict[key];
-  });
+  // 단일 스캔: 관련 속성 중 하나라도 가진 요소를 한 번에 모아 분기 처리
+  const selector = '[data-i18n],[data-i18n-placeholder],[data-iso],[data-i18n-tpl]';
+  document.querySelectorAll<HTMLElement>(selector).forEach((el) => {
+    const textKey = el.dataset.i18n as keyof typeof dict | undefined;
+    if (textKey && dict[textKey]) el.textContent = dict[textKey];
 
-  // data-i18n-attr: "attr:key" 또는 "attr1:key1,attr2:key2"
-  document.querySelectorAll<HTMLElement>('[data-i18n-attr]').forEach((el) => {
-    const raw = el.getAttribute('data-i18n-attr') || '';
-    raw.split(',').forEach((pair) => {
-      const [attr, key] = pair.split(':').map((s) => s.trim());
-      const value = dict[key as keyof typeof dict];
-      if (attr && value) el.setAttribute(attr, value);
-    });
-  });
+    const phKey = el.dataset.i18nPlaceholder as keyof typeof dict | undefined;
+    if (phKey && dict[phKey]) el.setAttribute('placeholder', dict[phKey]);
 
-  // data-iso: 상대 시간 포맷
-  document.querySelectorAll<HTMLElement>('[data-iso]').forEach((el) => {
-    const iso = el.getAttribute('data-iso');
-    if (iso) el.textContent = formatRelative(iso, lang);
-  });
+    const iso = el.dataset.iso;
+    if (iso) el.textContent = formatRelative(iso, lang, now);
 
-  // data-i18n-tpl: 템플릿 + 치환 변수는 각 요소 data-* 에서 수집
-  //   예) data-i18n-tpl="releases_more" data-remaining="5"
-  document.querySelectorAll<HTMLElement>('[data-i18n-tpl]').forEach((el) => {
-    const key = el.getAttribute('data-i18n-tpl') as keyof typeof dict | null;
-    if (!key || !dict[key]) return;
-    const vars: Record<string, string> = {};
-    Array.from(el.attributes).forEach((attr) => {
-      if (attr.name.startsWith('data-') && attr.name !== 'data-i18n-tpl') {
-        vars[attr.name.slice(5)] = attr.value;
-      }
-    });
-    el.textContent = formatTpl(dict[key], vars);
+    const tplKey = el.dataset.i18nTpl as keyof typeof dict | undefined;
+    if (tplKey && dict[tplKey]) {
+      el.textContent = formatTpl(dict[tplKey], collectVars(el));
+    }
   });
 
   // meta description 갱신 (SEO: 기본 한국어, 동적 전환 시 업데이트)

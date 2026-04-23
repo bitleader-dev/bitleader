@@ -30,17 +30,20 @@ const faviconHref = `${baseUrl}/favicon.svg`;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <!-- 언어 사전 세팅 (플래시 최소화): localStorage > navigator.language > 'ko' -->
+    <!-- STORAGE_KEY='lang' 는 src/i18n/dictionary.ts 와 동일해야 함 (inline 이라 번들 공유 불가) -->
     <script is:inline>
       (function () {
         try {
           var stored = localStorage.getItem('lang');
-          var nav = (navigator.language || 'ko').toLowerCase();
-          var lang = stored === 'ko' || stored === 'en' ? stored : nav.indexOf('en') === 0 ? 'en' : 'ko';
-          document.documentElement.lang = lang;
-          document.documentElement.dataset.lang = lang;
+          if (stored === 'ko' || stored === 'en') {
+            document.documentElement.lang = stored;
+            return;
+          }
         } catch (e) {
           /* noop */
         }
+        var nav = (navigator.language || 'ko').toLowerCase();
+        document.documentElement.lang = nav.indexOf('en') === 0 ? 'en' : 'ko';
       })();
     </script>
 

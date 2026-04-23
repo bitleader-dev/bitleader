@@ -1,14 +1,9 @@
 // 클라이언트 사이드 검색 / Topic 필터 / 정렬
 // 카드의 data-* 속성을 읽어 DOM을 조작하는 방식 (SSG 정적 사이트)
-// - 결과 카운트는 i18n 사전 사용 (현재 언어는 document.documentElement.dataset.lang)
-// - 언어 변경 시 window 'langchange' 이벤트 수신하여 재계산
+// - applyFilters: 입력·필터·정렬 변경 시 전체 필터링 + 정렬 + DOM 재배치 + 카운트
+// - updateCount : 언어 변경 시 카운트 문자열만 재계산 (정렬·DOM 재배치 회피)
 
-import { dictionaries, formatTpl, type LangCode } from '../i18n/dictionary';
-
-function currentLang(): LangCode {
-  const lang = document.documentElement.dataset.lang;
-  return lang === 'en' ? 'en' : 'ko';
-}
+import { dictionaries, formatTpl, getCurrentLang } from '../i18n/dictionary';
 
 interface CardElement extends HTMLElement {
   dataset: DOMStringMap & {
@@ -33,8 +28,19 @@ function initFilter() {
   if (!grid) return;
 
   const allCards = Array.from(grid.querySelectorAll<CardElement>('.repo-card'));
+  // 가장 최근 필터 결과 개수 — langchange 때 카운트 문자열만 재계산하기 위해 유지
+  let lastShown = allCards.length;
 
-  // 현재 필터 상태 반영하여 카드 목록 업데이트
+  const updateCount = () => {
+    if (!resultCount) return;
+    const total = allCards.length;
+    const dict = dictionaries[getCurrentLang()];
+    resultCount.textContent =
+      lastShown === total
+        ? formatTpl(dict.count_all, { total })
+        : formatTpl(dict.count_filtered, { shown: lastShown, total });
+  };
+
   const applyFilters = () => {
     const query = (searchInput?.value ?? '').trim().toLowerCase();
     const topic = topicSelect?.value ?? '';
@@ -80,23 +86,16 @@ function initFilter() {
       grid.appendChild(card);
     }
 
-    // 결과 카운트 표시 (현재 언어의 사전 사용)
-    if (resultCount) {
-      const total = allCards.length;
-      const dict = dictionaries[currentLang()];
-      resultCount.textContent =
-        filtered.length === total
-          ? formatTpl(dict.count_all, { total })
-          : formatTpl(dict.count_filtered, { shown: filtered.length, total });
-    }
+    lastShown = filtered.length;
+    updateCount();
   };
 
   // 이벤트 바인딩
   searchInput?.addEventListener('input', applyFilters);
   topicSelect?.addEventListener('change', applyFilters);
   sortSelect?.addEventListener('change', applyFilters);
-  // 언어 변경 시 카운트 문자열 재계산
-  window.addEventListener('langchange', applyFilters);
+  // 언어 변경 시에는 카운트 문자열만 재계산 (DOM 재배치 비용 회피)
+  window.addEventListener('langchange', updateCount);
 
   // 초기 실행
   applyFilters();

@@ -374,8 +374,9 @@ UI 는 **한국어 / English** 두 언어를 지원합니다.
 1. `src/i18n/ko.json` 과 `src/i18n/en.json` 에 **동일한 키** 로 번역 문구 추가
 2. 컴포넌트에 아래 중 하나로 속성 부여:
    - `data-i18n="key"` — `textContent` 교체 (가장 흔함)
-   - `data-i18n-attr="placeholder:key"` — 특정 속성 교체
-   - `data-i18n-tpl="key" data-varname="value"` — 템플릿 `{varname}` 치환
+   - `data-i18n-placeholder="key"` — `placeholder` 속성 교체
+   - `data-i18n-tpl="key" data-i18n-var-<name>="value"` — 템플릿 `{<name>}` 치환
+   - `data-iso="2025-01-01T..."` — 상대 시간 포맷으로 `textContent` 교체
 3. `src/scripts/i18n.ts` 가 자동 스캔하므로 별도 등록 불필요
 
 ### 주의
