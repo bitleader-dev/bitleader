@@ -28,6 +28,22 @@ const faviconHref = `${baseUrl}/favicon.svg`;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- 언어 사전 세팅 (플래시 최소화): localStorage > navigator.language > 'ko' -->
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem('lang');
+          var nav = (navigator.language || 'ko').toLowerCase();
+          var lang = stored === 'ko' || stored === 'en' ? stored : nav.indexOf('en') === 0 ? 'en' : 'ko';
+          document.documentElement.lang = lang;
+          document.documentElement.dataset.lang = lang;
+        } catch (e) {
+          /* noop */
+        }
+      })();
+    </script>
+
     <title>{title}</title>
     <meta name="description" content={description} />
 
@@ -67,5 +83,10 @@ const faviconHref = `${baseUrl}/favicon.svg`;
   >
     <slot />
     <Footer />
+
+    <!-- 클라이언트 사이드 언어 전환 런타임 (전역) -->
+    <script>
+      import '../scripts/i18n.ts';
+    </script>
   </body>
 </html>

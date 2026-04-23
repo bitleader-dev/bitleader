@@ -21,7 +21,7 @@ const { downloadUrl, repoUrl } = Astro.props;
         class="w-full flex items-center justify-center gap-2 bg-primary-container text-on-primary-container px-10 py-4 rounded-lg font-bold shadow-[0_0_20px_rgba(0,240,255,0.3)] hover:scale-[1.02] active:scale-[0.98] transition-all"
       >
         <span class="material-symbols-outlined">download</span>
-        다운로드
+        <span data-i18n="btn_download">다운로드</span>
       </a>
     )
   }
@@ -32,6 +32,6 @@ const { downloadUrl, repoUrl } = Astro.props;
     class="w-full flex items-center justify-center gap-2 bg-white/5 border border-white/10 text-white px-8 py-4 rounded-lg font-bold hover:bg-white/10 transition-all"
   >
     <span class="material-symbols-outlined">terminal</span>
-    GitHub 저장소
+    <span data-i18n="btn_github_repo">GitHub 저장소</span>
   </a>
 </div>

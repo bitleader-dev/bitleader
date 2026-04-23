@@ -1,0 +1,27 @@
+---
+// 언어 선택 드롭다운 (한국어 / English)
+// - id="lang-switch" 는 src/scripts/i18n.ts 에서 참조
+// - 기본값은 클라이언트 런타임이 브라우저 언어 감지하여 설정
+// - 헤더와 상세 페이지 헤더에 동일하게 배치
+---
+
+<div class="relative flex items-center gap-2">
+  <span
+    class="material-symbols-outlined text-zinc-500 text-[18px] leading-none"
+    aria-hidden="true">language</span
+  >
+  <div class="relative group">
+    <label for="lang-switch" class="sr-only">Language</label>
+    <select
+      id="lang-switch"
+      class="appearance-none bg-surface-container-low border border-white/10 rounded px-3 py-1.5 pr-8 text-xs text-white focus:outline-none focus:border-primary-container/50 focus:ring-1 focus:ring-primary-container/20 cursor-pointer"
+    >
+      <option class="bg-zinc-900" value="ko">한국어</option>
+      <option class="bg-zinc-900" value="en">English</option>
+    </select>
+    <span
+      class="material-symbols-outlined pointer-events-none absolute right-1 top-1/2 -translate-y-1/2 text-zinc-500 text-[14px]"
+      aria-hidden="true">expand_more</span
+    >
+  </div>
+</div>

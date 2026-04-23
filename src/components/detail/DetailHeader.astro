@@ -1,8 +1,10 @@
 ---
 // 상세 페이지 상단 헤더
 // 참고: stitch_dark_card_dashboard (1)/code.html 동일 구조
-// - 좌측: Back 버튼 (홈으로 이동)
+// - 좌측: 홈으로 버튼
 // - 중앙: BIT LEADER 로고
+// - 우측: 언어 선택 드롭다운
+import LanguageSwitch from '../LanguageSwitch.astro';
 
 const homeHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/`;
 ---
@@ -10,18 +12,21 @@ const homeHref = `${import.meta.env.BASE_URL.replace(/\/$/, '')}/`;
 <header
   class="fixed top-0 w-full z-50 px-8 h-16 bg-[#0A0A0A]/80 backdrop-blur-md border-b border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
 >
-  <div class="h-full max-w-7xl mx-auto flex items-center relative">
+  <div class="h-full max-w-7xl mx-auto flex items-center justify-between relative">
     <div class="flex items-center gap-6">
       <a
         href={homeHref}
         class="flex items-center gap-2 text-white/60 hover:text-white transition-colors group"
       >
         <span class="material-symbols-outlined text-[20px]">arrow_back</span>
-        <span class="text-sm font-medium hidden sm:inline">홈으로</span>
+        <span class="text-sm font-medium hidden sm:inline" data-i18n="btn_home">홈으로</span>
       </a>
     </div>
     <div class="absolute left-1/2 -translate-x-1/2">
       <span class="text-xl font-black text-[#00F0FF] tracking-tighter">BIT LEADER</span>
+    </div>
+    <div class="flex items-center">
+      <LanguageSwitch />
     </div>
   </div>
 </header>

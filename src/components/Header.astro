@@ -1,7 +1,9 @@
 ---
 // 상단 고정 내비게이션 바
-// 참고: stitch_dark_card_dashboard/code.html 동일 구조 (로고만 Bitleader로 교체)
-// 검색 입력은 FilterBar가 아닌 이쪽에서 제공 (참고 디자인 유지)
+// 참고: stitch_dark_card_dashboard/code.html 동일 구조 (로고만 BIT LEADER로 교체)
+// - 좌측: 로고 + 검색 입력 (참고 디자인 유지)
+// - 우측: 언어 선택 드롭다운
+import LanguageSwitch from './LanguageSwitch.astro';
 ---
 
 <header
@@ -18,12 +20,13 @@
         id="search-input"
         class="w-full bg-surface-container-lowest/50 border-none rounded-full py-2 pl-10 pr-4 text-sm text-zinc-300 focus:ring-1 focus:ring-cyan-500/50 placeholder-zinc-600 transition-all"
         placeholder="저장소 검색..."
+        data-i18n-attr="placeholder:search_placeholder"
         type="text"
         autocomplete="off"
       />
     </div>
   </div>
   <div class="flex items-center gap-5">
-    <!-- 참고 디자인과 동일하게 우측 영역은 비움 -->
+    <LanguageSwitch />
   </div>
 </header>

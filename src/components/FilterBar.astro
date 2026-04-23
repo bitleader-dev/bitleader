@@ -19,6 +19,7 @@ const { topics } = Astro.props;
     <label
       for="topic-filter"
       class="text-zinc-500 font-label-md uppercase tracking-wider whitespace-nowrap"
+      data-i18n="label_topic"
       >Topic</label
     >
     <div class="relative flex-1 group">
@@ -26,7 +27,7 @@ const { topics } = Astro.props;
         id="topic-filter"
         class="w-full appearance-none bg-surface-container-low border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-container/50 focus:ring-1 focus:ring-primary-container/20 transition-all cursor-pointer"
       >
-        <option class="bg-zinc-900" value="">전체 Topic</option>
+        <option class="bg-zinc-900" value="" data-i18n="topic_all">전체 Topic</option>
         {topics.map((t) => <option class="bg-zinc-900" value={t}>{t}</option>)}
       </select>
       <span
@@ -41,6 +42,7 @@ const { topics } = Astro.props;
     <label
       for="sort-order"
       class="text-zinc-500 font-label-md uppercase tracking-wider whitespace-nowrap"
+      data-i18n="label_sort"
       >정렬</label
     >
     <div class="relative flex-1 group">
@@ -48,10 +50,10 @@ const { topics } = Astro.props;
         id="sort-order"
         class="w-full appearance-none bg-surface-container-low border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-container/50 focus:ring-1 focus:ring-primary-container/20 transition-all cursor-pointer"
       >
-        <option class="bg-zinc-900" value="updated">최근 업데이트순</option>
-        <option class="bg-zinc-900" value="stars">스타 많은순</option>
-        <option class="bg-zinc-900" value="name">이름순 (A-Z)</option>
-        <option class="bg-zinc-900" value="created">최근 생성순</option>
+        <option class="bg-zinc-900" value="updated" data-i18n="sort_updated">최근 업데이트순</option>
+        <option class="bg-zinc-900" value="stars" data-i18n="sort_stars">스타 많은순</option>
+        <option class="bg-zinc-900" value="name" data-i18n="sort_name">이름순 (A-Z)</option>
+        <option class="bg-zinc-900" value="created" data-i18n="sort_created">최근 생성순</option>
       </select>
       <span
         class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none group-focus-within:text-primary-container"

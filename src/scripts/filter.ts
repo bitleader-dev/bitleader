@@ -1,5 +1,14 @@
 // 클라이언트 사이드 검색 / Topic 필터 / 정렬
 // 카드의 data-* 속성을 읽어 DOM을 조작하는 방식 (SSG 정적 사이트)
+// - 결과 카운트는 i18n 사전 사용 (현재 언어는 document.documentElement.dataset.lang)
+// - 언어 변경 시 window 'langchange' 이벤트 수신하여 재계산
+
+import { dictionaries, formatTpl, type LangCode } from '../i18n/dictionary';
+
+function currentLang(): LangCode {
+  const lang = document.documentElement.dataset.lang;
+  return lang === 'en' ? 'en' : 'ko';
+}
 
 interface CardElement extends HTMLElement {
   dataset: DOMStringMap & {
@@ -71,13 +80,14 @@ function initFilter() {
       grid.appendChild(card);
     }
 
-    // 결과 카운트 표시
+    // 결과 카운트 표시 (현재 언어의 사전 사용)
     if (resultCount) {
       const total = allCards.length;
+      const dict = dictionaries[currentLang()];
       resultCount.textContent =
         filtered.length === total
-          ? `저장소 ${total}개`
-          : `저장소 ${filtered.length}개 / 전체 ${total}개`;
+          ? formatTpl(dict.count_all, { total })
+          : formatTpl(dict.count_filtered, { shown: filtered.length, total });
     }
   };
 
@@ -85,6 +95,8 @@ function initFilter() {
   searchInput?.addEventListener('input', applyFilters);
   topicSelect?.addEventListener('change', applyFilters);
   sortSelect?.addEventListener('change', applyFilters);
+  // 언어 변경 시 카운트 문자열 재계산
+  window.addEventListener('langchange', applyFilters);
 
   // 초기 실행
   applyFilters();
