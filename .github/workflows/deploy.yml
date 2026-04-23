@@ -1,0 +1,61 @@
+# Bitleader Dashboard: GitHub Pages 자동 배포 워크플로우
+# - 매일 UTC 00:00 (KST 09:00) 자동 재빌드 (GitHub 최신 저장소 반영)
+# - main 브랜치 push 시 재빌드
+# - 수동 트리거 지원 (workflow_dispatch)
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 0 * * *' # 매일 UTC 자정 (KST 09:00)
+  workflow_dispatch:
+
+# GitHub Pages 배포에 필요한 권한
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 동시 배포 충돌 방지: 같은 그룹은 순차 실행 (진행 중 배포는 취소)
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Astro site
+        # GITHUB_TOKEN은 GitHub Actions가 자동 주입 (public 저장소 읽기 권한 포함)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

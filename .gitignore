@@ -1,3 +1,8 @@
+# 글로벌 gitignore 의 `.github/` 제외를 본 저장소 한정으로 해제
+# (GitHub Actions 워크플로우가 반드시 커밋되어야 배포가 동작함)
+!.github/
+!.github/**
+
 # 빌드 결과물
 dist/
 .astro/
