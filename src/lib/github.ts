@@ -12,10 +12,10 @@ import type { GitHubRepo, GitHubReadme, GitHubRelease } from './types';
 const OWNER = 'bitleader-dev';
 const API_BASE = 'https://api.github.com';
 
-// MOCK_REPOS=1 일 때 로컬 fixture 로 대체 (페이지네이션·동시성·다중 Topic 등 UX 테스트용)
-// fixture 파일은 .gitignore 대상이라 환경에 따라 없을 수 있음 → 로드 실패 시 실제 API 폴백
-// Astro SSG 는 Node 런타임이라 process.env 로 직접 읽는 것이 가장 확실 (Vite 의 import.meta.env 는 PUBLIC_ prefix 규칙 적용됨)
-const USE_MOCK = process.env.MOCK_REPOS === '1';
+// MOCK_REPOS=1 로 빌드 시 로컬 fixture 로 대체 (astro.config.mjs 의 Vite define 으로 주입되는 상수)
+// - 미설정 환경에서는 false 로 치환되어 Rollup DCE 가 아래 import 문을 번들에서 제거 → fixture 없어도 빌드 통과
+declare const __BUILD_MOCK__: boolean;
+const USE_MOCK = __BUILD_MOCK__;
 
 type MockFixtures = {
   makeMockRepos: (count?: number) => GitHubRepo[];
@@ -25,16 +25,17 @@ type MockFixtures = {
 
 let mockFixturesPromise: Promise<MockFixtures | null> | null = null;
 function loadMockFixtures(): Promise<MockFixtures | null> {
+  // 프로덕션 빌드에서는 이 가드가 상시 true → Rollup 이 아래 전체 블록을 unreachable 로 판단해 제거
+  if (!__BUILD_MOCK__) return Promise.resolve(null);
   if (mockFixturesPromise) return mockFixturesPromise;
   mockFixturesPromise = (async () => {
     try {
-      // Vite 의 정적 분석을 건너뛰어 fixture 미존재 환경(Actions 러너 등)에서도 안전
-      const mod = (await import(/* @vite-ignore */ '../test-fixtures/mock-repos')) as MockFixtures;
-      console.log('[github] MOCK_REPOS=1 감지 — fixture 30개 저장소로 빌드합니다.');
+      const mod = (await import('../test-fixtures/mock-repos')) as MockFixtures;
+      console.log('[github] MOCK_REPOS=1 감지 — fixture 저장소로 빌드합니다.');
       return mod;
     } catch (err) {
       console.warn(
-        '[github] MOCK_REPOS=1 이지만 fixture 파일이 없습니다. 실제 GitHub API 로 폴백:',
+        '[github] MOCK_REPOS=1 이지만 fixture 파일을 로드하지 못했습니다. 실제 GitHub API 로 폴백:',
         (err as Error).message,
       );
       return null;
