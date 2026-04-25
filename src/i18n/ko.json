@@ -37,6 +37,7 @@
   "releases_notes_link": "릴리스 노트",
   "releases_none": "등록된 릴리스가 없습니다",
   "releases_more": "+ {remaining}개 릴리스 더 보기",
+  "card_updated_label": "업데이트",
   "time_today": "오늘",
   "time_yesterday": "1일 전",
   "time_days_ago": "{days}일 전",

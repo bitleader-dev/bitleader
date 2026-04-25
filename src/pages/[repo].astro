@@ -34,9 +34,14 @@ const ogImagePath = `/og/${detail.name}.png`;
 
   <main id="main" class="pt-16 min-h-screen">
     <div class="max-w-[1440px] mx-auto px-8 py-12">
-      <!-- Breadcrumb -->
-      <div class="flex items-center gap-2 mb-8 text-white/40 font-label-md">
-        <span class="text-[#00F0FF] font-bold">{detail.name}</span>
+      <!-- 저장소 이름 + About description (있을 때만) -->
+      <div class="mb-8">
+        <div class="flex items-center gap-2 text-white/40 font-label-md">
+          <span class="text-[#00F0FF] font-bold">{detail.name}</span>
+        </div>
+        {detail.description && (
+          <p class="mt-2 text-zinc-400 text-base max-w-[800px]">{detail.description}</p>
+        )}
       </div>
 
       <div class="grid grid-cols-12 gap-8">

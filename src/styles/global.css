@@ -194,8 +194,9 @@
 }
 
 /* 전역 기본 스타일 */
+/* 영문은 Inter, 한글은 Noto Sans KR (Inter에 한글 글리프 없어 자동 fallback) */
 html {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', 'Noto Sans KR', system-ui, sans-serif;
 }
 
 body {

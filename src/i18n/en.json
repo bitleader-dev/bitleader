@@ -37,6 +37,7 @@
   "releases_notes_link": "Release notes",
   "releases_none": "No releases yet",
   "releases_more": "+ {remaining} more releases",
+  "card_updated_label": "Updated",
   "time_today": "today",
   "time_yesterday": "1 day ago",
   "time_days_ago": "{days} days ago",

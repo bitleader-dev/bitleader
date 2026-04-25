@@ -92,11 +92,11 @@ const canonicalUrl = Astro.site
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={absoluteOgImage} />
 
-    <!-- Inter 폰트 로드 -->
+    <!-- 폰트 로드: 영문은 Inter, 한글은 Noto Sans KR (Inter에 한글 글리프 없으므로 자동 fallback) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap"
       rel="stylesheet"
     />
 
