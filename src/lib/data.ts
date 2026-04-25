@@ -129,7 +129,20 @@ function resolveDownloadUrl(repoName: string, releases: GitHubRelease[]): string
 }
 
 // 상세 페이지 데이터 조립 (특정 저장소 1건)
-export async function getRepoDetail(repoName: string): Promise<RepoDetailData | null> {
+// [repo].astro 페이지와 og/[repo].png.ts OG 라우트 양쪽에서 동일 저장소를 조회하므로
+// shiki+sanitize 비용이 두 번 들지 않도록 module-level Promise 캐시로 1회만 계산
+const detailCache = new Map<string, Promise<RepoDetailData | null>>();
+
+export function getRepoDetail(repoName: string): Promise<RepoDetailData | null> {
+  let p = detailCache.get(repoName);
+  if (!p) {
+    p = computeRepoDetail(repoName);
+    detailCache.set(repoName, p);
+  }
+  return p;
+}
+
+async function computeRepoDetail(repoName: string): Promise<RepoDetailData | null> {
   const repos = await fetchTargetRepos();
   const repo = repos.find((r) => r.name === repoName);
   if (!repo) return null;
@@ -141,7 +154,7 @@ export async function getRepoDetail(repoName: string): Promise<RepoDetailData | 
 
   if (!readme) return null;
 
-  const readmeHtml = renderMarkdown(readme, repoName, repo.default_branch);
+  const readmeHtml = await renderMarkdown(readme, repoName, repo.default_branch);
   const downloadUrl = resolveDownloadUrl(repoName, releases);
 
   return {

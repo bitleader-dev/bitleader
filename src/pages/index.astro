@@ -36,6 +36,22 @@ const recentReleases = await collectRecentReleases(3);
         <div id="card-grid" class="grid grid-cols-1 md:grid-cols-12 gap-6">
           {cards.map((card) => <ProjectCard card={card} />)}
         </div>
+        <!-- 검색/필터 결과 0건 안내 -->
+        <div
+          id="empty-state"
+          class="hidden glass-panel rounded-xl p-12 text-center"
+          role="status"
+          aria-live="polite"
+        >
+          <p class="text-zinc-200 text-lg" data-i18n="empty_state_title">검색 결과가 없습니다</p>
+          <p class="mt-2 text-zinc-400 text-sm" data-i18n="empty_state_hint">다른 검색어 또는 필터를 시도해 보세요</p>
+          <button
+            id="reset-filters"
+            type="button"
+            class="mt-6 px-4 py-2 rounded border border-[#00F0FF]/40 text-sm text-[#00F0FF] hover:bg-[#00F0FF]/10 transition-all"
+            data-i18n="empty_state_reset"
+          >필터 초기화</button>
+        </div>
         <!-- 페이지네이션 (저장소 12개 초과 시에만 filter.ts 가 노출) -->
         <nav
           id="pagination"

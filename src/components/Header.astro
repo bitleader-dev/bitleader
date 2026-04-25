@@ -19,7 +19,7 @@ import LanguageSwitch from './LanguageSwitch.astro';
         >
         <input
           id="search-input"
-          class="w-full bg-surface-container-lowest/50 border-none rounded-full py-2 pl-10 pr-4 text-sm text-zinc-300 focus:ring-1 focus:ring-cyan-500/50 placeholder-zinc-600 transition-all"
+          class="w-full bg-surface-container-lowest/50 border-none rounded-full py-2 pl-10 pr-10 text-sm text-zinc-300 focus:ring-1 focus:ring-cyan-500/50 placeholder-zinc-600 transition-all"
           placeholder="저장소 검색..."
           aria-label="저장소 검색"
           data-i18n-placeholder="search_placeholder"
@@ -27,6 +27,11 @@ import LanguageSwitch from './LanguageSwitch.astro';
           type="text"
           autocomplete="off"
         />
+        <!-- '/' 단축키 안내: 입력 포커스 시 자동 숨김 -->
+        <kbd
+          aria-hidden="true"
+          class="hidden md:flex absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded border border-white/10 bg-white/5 text-[10px] text-zinc-500 font-mono pointer-events-none group-focus-within:opacity-0 transition-opacity"
+        >/</kbd>
       </div>
     </div>
     <div class="flex items-center gap-5">

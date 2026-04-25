@@ -1,0 +1,42 @@
+# PR/main push 시점 빌드 회귀 검증 워크플로우
+# - deploy.yml 은 main push/cron/수동 트리거에서만 동작하므로 PR 시점 회귀를 잡지 못함
+# - 이 워크플로우는 PR 시점에 MOCK_REPOS=1 로 빌드하여 토큰 없이 컴파일/번들 회귀를 빠르게 차단한다
+# - mock fixture(개인 데이터)는 .gitignore 라 CI 에 없음 → scripts/ensure-mock-stub.js 가 빈 stub 을 자동 생성
+#   (스텁 기반 빌드라 실 데이터 30개 회귀 검증은 아니지만, ts/astro/sanitize 등 코드 회귀는 모두 잡힘)
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check (astro check)
+        run: npm run check
+
+      - name: Generate 30-repo mock fixture (CI 전용)
+        # 사용자 로컬 fixture 가 .gitignore 라 CI 에는 없음 → generator 가 30개 결정적 데이터로 fixture 작성.
+        # 로컬에 사용자 fixture 가 있는 경우 generator 는 existsSync 가드로 건너뜀(자동 보호).
+        run: node scripts/generate-mock-fixtures.js
+
+      - name: Build (MOCK_REPOS=1, 30-repo simulation, no token required)
+        env:
+          MOCK_REPOS: '1'
+        run: npm run build

@@ -52,7 +52,12 @@ const ogImagePath = `/og/${detail.name}.png`;
 
         <!-- 오른쪽: Releases 카드 + 액션 버튼 -->
         <div class="col-span-12 lg:col-span-4 space-y-6">
-          <ReleasesCard releases={detail.releases} repoUrl={detail.url} />
+          <ReleasesCard
+            releases={detail.releases}
+            repoUrl={detail.url}
+            repoName={detail.name}
+            defaultBranch={detail.defaultBranch}
+          />
           <ActionButtons downloadUrl={detail.downloadUrl} repoUrl={detail.url} />
         </div>
       </div>

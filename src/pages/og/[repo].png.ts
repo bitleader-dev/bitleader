@@ -28,7 +28,10 @@ export const GET: APIRoute = async ({ params }) => {
     description: detail.description,
   });
 
-  return new Response(png, {
+  // png 는 Uint8Array<ArrayBufferLike>. Response 의 BodyInit 는 ArrayBuffer-backed view 만 허용 →
+  // 새 Uint8Array 로 복사해 ArrayBuffer-backed 인스턴스로 좁혀 TS 호환성 확보
+  const pngBody = new Uint8Array(png);
+  return new Response(pngBody, {
     status: 200,
     headers: {
       'Content-Type': 'image/png',

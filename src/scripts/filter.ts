@@ -71,6 +71,10 @@ function initFilter() {
   const pageNext = document.getElementById('page-next') as HTMLButtonElement | null;
   const pageInfo = document.getElementById('page-info');
 
+  // 검색/필터 결과 0건 empty state (index.astro 의 #empty-state, #reset-filters)
+  const emptyState = document.getElementById('empty-state');
+  const resetButton = document.getElementById('reset-filters') as HTMLButtonElement | null;
+
   if (!grid) return;
 
   const allCards = Array.from(grid.querySelectorAll<CardElement>('.repo-card'));
@@ -258,6 +262,11 @@ function initFilter() {
       }
     }
 
+    // empty state: 검색/필터 결과 0건이면 grid 숨기고 안내 + 초기화 버튼 노출
+    const isEmpty = total === 0;
+    if (emptyState) emptyState.classList.toggle('hidden', !isEmpty);
+    grid.classList.toggle('hidden', isEmpty);
+
     updateCount();
     updateTopicLabel();
     updatePageInfo();
@@ -387,11 +396,70 @@ function initFilter() {
   // 북마크 버튼
   initBookmarkButtons();
 
+  // 필터 초기화 버튼: 검색어/Topic/정렬 모두 기본값으로 되돌리고 1페이지로
+  resetButton?.addEventListener('click', () => {
+    if (searchInput) searchInput.value = '';
+    for (const cb of topicCheckboxes) cb.checked = false;
+    if (sortSelect) sortSelect.value = DEFAULT_SORT;
+    currentPage = 1;
+    applyFilters();
+  });
+
   // 언어 변경 시 카운트 + Topic 라벨 + 페이지 정보만 재계산 (DOM 재배치 비용 회피)
   window.addEventListener('langchange', () => {
     updateCount();
     updateTopicLabel();
     updatePageInfo();
+  });
+
+  // 키보드 단축키:
+  // - '/'  : 검색 input 포커스
+  // - 'Esc': 검색 input 비우고 blur (검색 input 포커스일 때만)
+  // - 'b'  : 키보드 포커스 또는 마우스 hover 카드의 북마크 토글
+  // 입력 중(input/textarea/select/contentEditable) 또는 modifier 키(Ctrl/Meta/Alt)와 함께면 무시
+  const isTypingTarget = (el: EventTarget | null): boolean => {
+    if (!(el instanceof HTMLElement)) return false;
+    if (el.isContentEditable) return true;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  };
+
+  document.addEventListener('keydown', (e) => {
+    // Esc 는 검색 input 포커스 상태일 때 우선 처리 (입력 비우기 + blur)
+    if (e.key === 'Escape' && searchInput && document.activeElement === searchInput) {
+      if (searchInput.value !== '') {
+        searchInput.value = '';
+        currentPage = 1;
+        applyFilters();
+      }
+      searchInput.blur();
+      return;
+    }
+
+    // 그 외 단축키는 입력 중이면 무시 + modifier 무시
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (isTypingTarget(e.target)) return;
+
+    if (e.key === '/') {
+      e.preventDefault();
+      searchInput?.focus();
+      searchInput?.select();
+      return;
+    }
+
+    if (e.key === 'b' || e.key === 'B') {
+      // 우선순위: 키보드 포커스 카드 > 마우스 hover 카드
+      const active = document.activeElement;
+      const focused =
+        active instanceof HTMLElement ? active.closest('.repo-card') : null;
+      const hovered = focused ?? document.querySelector('.repo-card:hover');
+      if (!hovered) return;
+      const btn = hovered.querySelector<HTMLButtonElement>('.bookmark-btn');
+      if (btn) {
+        e.preventDefault();
+        btn.click();
+      }
+    }
   });
 
   // 초기 실행: 쿼리 복원 → 필터 적용

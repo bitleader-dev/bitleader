@@ -75,6 +75,13 @@
     padding: 0;
   }
 
+  /* shiki(github-dark) 가 출력한 코드블록: 토큰 색상은 살리고 배경은 디자인 톤(#0e0e0e) 유지 */
+  /* shiki 는 <pre class="shiki ..." style="background-color:#24292e;color:..."> 를 출력하는데
+     인라인 style 이 .prose-dark pre 의 background 를 덮는다. 디자인 일관성을 위해 background 만 강제 통일. */
+  .prose-dark pre.shiki {
+    background: #0e0e0e !important;
+  }
+
   /* 인라인 코드 */
   .prose-dark :not(pre) > code {
     background: rgba(255, 255, 255, 0.06);

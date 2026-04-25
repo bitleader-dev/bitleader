@@ -2,10 +2,84 @@
 // 1) 첫 번째 이미지 URL 추출 (상대 경로 → 절대 경로 변환)
 // 2) 본문에서 180자 요약 추출 (코드/이미지/링크 문법 제거)
 // 3) 전문 Markdown → 안전한 HTML 변환 (상세 페이지용)
+//    - 코드 블록은 shiki(github-dark) 로 빌드 타임 syntax highlighting
+//    - 결과 HTML 의 inline style(color/background-color) 만 sanitize 화이트리스트로 허용
 
-import { marked } from 'marked';
+import { Marked } from 'marked';
 import sanitizeHtml from 'sanitize-html';
+import { createHighlighter } from 'shiki';
 import { OWNER } from './github';
+
+// shiki 가 미리 로드할 언어 목록 (저장소 README 에 자주 등장하는 것 위주)
+// alias(js↔javascript, ts↔typescript, sh↔shell↔bash 등) 는 shiki 가 자동 처리
+const SUPPORTED_LANGS = [
+  'bash',
+  'javascript',
+  'typescript',
+  'tsx',
+  'jsx',
+  'json',
+  'jsonc',
+  'html',
+  'xml',
+  'css',
+  'scss',
+  'yaml',
+  'markdown',
+  'python',
+  'rust',
+  'go',
+  'java',
+  'cpp',
+  'c',
+  'csharp',
+  'sql',
+  'dockerfile',
+  'ini',
+  'toml',
+] as const;
+
+const SHIKI_THEME = 'github-dark';
+
+// shiki + marked 인스턴스는 빌드 1회만 초기화하고 모든 저장소 README/릴리스 본문에서 재사용
+let markedPromise: Promise<Marked> | null = null;
+function getMarked(): Promise<Marked> {
+  if (markedPromise) return markedPromise;
+  markedPromise = (async () => {
+    const highlighter = await createHighlighter({
+      themes: [SHIKI_THEME],
+      langs: [...SUPPORTED_LANGS],
+    });
+    const loaded = new Set(highlighter.getLoadedLanguages());
+
+    const m = new Marked({ gfm: true, breaks: false, async: true });
+    m.use({
+      async: true,
+      walkTokens: (token) => {
+        if (token.type !== 'code') return;
+        const requested = (token.lang || '').toLowerCase().trim();
+        const lang = requested && loaded.has(requested) ? requested : 'text';
+        try {
+          const html = highlighter.codeToHtml(token.text, {
+            lang,
+            theme: SHIKI_THEME,
+          });
+          // marked 가 변환된 HTML 을 그대로 출력하도록 토큰 교체
+          Object.assign(token as unknown as Record<string, unknown>, {
+            type: 'html',
+            text: html,
+            raw: html,
+            block: true,
+          });
+        } catch {
+          // 변환 실패 시 원본 code 토큰 유지 → marked 가 기본 <pre><code> 로 출력
+        }
+      },
+    });
+    return m;
+  })();
+  return markedPromise;
+}
 
 // 첫 번째 이미지 추출: Markdown ![alt](url) 우선, 없으면 HTML <img src="...">
 // 상대 경로는 raw.githubusercontent.com 절대 경로로 변환
@@ -105,23 +179,23 @@ export function extractSummary(markdown: string, maxLen = 180): string {
   return `${text.slice(0, cutoff).trimEnd()}...`;
 }
 
-// Markdown 전문 → 안전한 HTML 변환
-// - marked로 Markdown → HTML
-// - sanitize-html로 XSS 제거
+// sanitize 후 코드블록 inline style 만 통과시키는 패턴 (XSS 방어 유지)
+// shiki 가 출력하는 색상은 #RRGGBB 형식이라 hex 만 허용해도 충분
+const STYLE_VALUE_PATTERNS = [/^#(?:[0-9a-fA-F]{3,8})$/, /^rgba?\(/];
+
+// Markdown 전문 → 안전한 HTML 변환 (async)
+// - shiki 가 코드블록을 highlight 한 HTML 로 토큰 치환
+// - sanitize-html 로 XSS 제거 (style 은 color/background-color 만 통과)
 // - 이미지/링크 상대 경로를 raw/blob 절대 경로로 변환
-export function renderMarkdown(
+export async function renderMarkdown(
   markdown: string,
   repoName: string,
   defaultBranch: string
-): string {
+): Promise<string> {
   if (!markdown) return '';
 
-  // Markdown → HTML (GFM 활성화: 표, 체크박스, strikethrough 등)
-  const rawHtml = marked.parse(markdown, {
-    gfm: true,
-    breaks: false,
-    async: false,
-  }) as string;
+  const m = await getMarked();
+  const rawHtml = (await m.parse(markdown)) as string;
 
   // 허용 태그/속성 한정 (XSS 방지)
   const cleaned = sanitizeHtml(rawHtml, {
@@ -139,12 +213,20 @@ export function renderMarkdown(
     allowedAttributes: {
       a: ['href', 'title', 'target', 'rel'],
       img: ['src', 'alt', 'title', 'width', 'height'],
-      code: ['class'],
-      pre: ['class'],
-      span: ['class'],
+      // shiki 가 출력하는 inline style/tabindex 허용
+      code: ['class', 'style'],
+      pre: ['class', 'style', 'tabindex'],
+      span: ['class', 'style'],
       div: ['class'],
       th: ['align'],
       td: ['align'],
+    },
+    // shiki 가 inline 으로 칠하는 토큰 색상만 통과시킴
+    allowedStyles: {
+      '*': {
+        color: STYLE_VALUE_PATTERNS,
+        'background-color': STYLE_VALUE_PATTERNS,
+      },
     },
     allowedSchemes: ['http', 'https', 'mailto', 'data'],
     transformTags: {
@@ -176,13 +258,13 @@ function resolveRelativeUrls(
   let result = html;
 
   // <img src="..."> 처리
-  result = result.replace(/<img\b([^>]*?)\bsrc=(["'])([^"']+)\2/gi, (match, pre, q, src) => {
+  result = result.replace(/<img\b([^>]*?)\bsrc=(["'])([^"']+)\2/gi, (_match, pre, q, src) => {
     const resolved = resolveImageSrc(src, rawBase);
     return `<img${pre} src=${q}${resolved}${q}`;
   });
 
   // <a href="..."> 처리
-  result = result.replace(/<a\b([^>]*?)\bhref=(["'])([^"']+)\2/gi, (match, pre, q, href) => {
+  result = result.replace(/<a\b([^>]*?)\bhref=(["'])([^"']+)\2/gi, (_match, pre, q, href) => {
     const resolved = resolveLinkHref(href, blobBase);
     return `<a${pre} href=${q}${resolved}${q}`;
   });

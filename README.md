@@ -26,14 +26,18 @@
 - **URL 공유**: 현재 검색/필터/정렬/페이지 상태가 URL 쿼리(`?q=&topic=&sort=&page=`)에 자동 반영되어 **링크로 필터 결과 공유 가능**
 - **페이지네이션**: 저장소 수가 12개를 초과하면 자동으로 페이지 네비게이션이 노출 (12개 이하는 한 번에 전체 표시)
 - **자동 갱신**: GitHub Actions 스케줄로 **매일 UTC 00:00 (= KST 09:00)** 자동 재빌드 + 배포 (GitHub 부하에 따라 최대 10~30분 지연 가능). push / 수동 실행 / cron 조정도 지원 — "배포", "사이트 업데이트 주기" 섹션 참고
+- **빈 결과 안내**: 검색·필터로 결과가 0건이면 "검색 결과가 없습니다" 안내 + **필터 초기화** 버튼이 노출되어 한 번에 검색어/Topic/정렬을 모두 기본값으로 되돌림
+- **키보드 단축키**: `/` = 검색창 포커스, `Esc` = 검색 초기화, `b` = hover/포커스 카드의 북마크 토글 (입력 중에는 비활성)
 
 ### 상세 페이지 (저장소별)
 - **URL 형식**: `/bitleader/{repo-name}`
 - **헤더 영역**: README 카드 위에 저장소 이름(시안색) + About Description 한 줄 표시 (description 없으면 이름만)
 - **2열 레이아웃**: 왼쪽 README 전문 + 오른쪽 Releases 카드 및 액션 버튼
 - **README 렌더링**: Markdown → 안전한 HTML 변환 (sanitize-html로 XSS 방지)
+- **코드 syntax highlighting**: 빌드 타임에 `shiki`(github-dark 테마) 로 README/릴리스 본문 코드 블록을 토큰 색상화. 미지원 언어는 일반 텍스트로 안전 폴백, 디자인 톤(검정 배경 + 시안 좌측 보더) 유지
 - **상대 경로 자동 해결**: README 내 이미지/링크는 GitHub raw/blob 절대 경로로 변환
-- **릴리스 카드**: 최신 1개 상세(최신 배지 + 릴리스 노트 링크) + 과거 2개 간략 + "+ N개 릴리스 더 보기" 링크 (0개면 "등록된 릴리스가 없습니다")
+- **릴리스 카드**: 최신 1개 상세(최신 배지 + **릴리스 본문 보기** 토글로 펼침/접힘 + 릴리스 노트 링크) + 과거 2개 간략 + "+ N개 릴리스 더 보기" 링크 (0개면 "등록된 릴리스가 없습니다")
+- **릴리스 본문 Markdown 렌더링**: 최신 릴리스 본문은 `<details>` 안에 Markdown 렌더링(상기 shiki 적용). 본문 없는 릴리스는 토글 자체 미표시
 - **다운로드 버튼**: 저장소별 다운로드 URL이 있을 때만 표시 (아래 "Download URL 관리" 참고)
 - **GitHub 저장소 버튼**: 항상 표시, 해당 저장소 GitHub 페이지로 이동
 
@@ -65,13 +69,16 @@
 |---|---|---|
 | 프레임워크 | Astro 5.x | 정적 사이트 생성 (SSG) |
 | 스타일 | Tailwind CSS 3.x | 유틸리티 기반 CSS |
-| Markdown | marked + sanitize-html | README 전문 렌더링 + XSS 방지 |
+| Markdown | marked + sanitize-html | README/릴리스 본문 렌더링 + XSS 방지 |
+| Syntax highlighting | shiki (github-dark) | 빌드 타임 코드 블록 토큰 색상화 |
 | Sitemap | @astrojs/sitemap | 빌드 타임 sitemap.xml 자동 생성 |
 | OG 이미지 | satori + satori-html + @resvg/resvg-js (devDep) | 저장소별 Open Graph PNG 빌드 타임 생성 |
 | OG 한글 폰트 | @fontsource/noto-sans-kr (devDep) | OG 이미지에서 한글 description 렌더 |
 | 언어 | TypeScript 5.x (strict) | 타입 안전성 |
 | 배포 | GitHub Pages + GitHub Actions | 정적 호스팅 + CI/CD |
-| 품질 감시 | treosh/lighthouse-ci-action (Actions 전용) | 배포 후 성능/접근성/SEO 점수 측정 |
+| 품질 감시 | treosh/lighthouse-ci-action (Actions 전용) | 배포 후 점수 측정 + **하한 강제** (perf 0.80 / a11y 0.95 / best-practices 0.95 / seo 0.95). 미달 시 워크플로우 실패 (`lighthouserc.json`) |
+| 타입/콘텐츠 진단 | @astrojs/check (devDep) | `npm run check` 로 .astro/.ts 정적 진단 |
+| PR 회귀 검증 | GitHub Actions (Actions 전용) | PR/main push 시 `astro check` → 30개 mock fixture 생성 → `MOCK_REPOS=1` 빌드 순차 실행으로 타입/번들 회귀 차단 (`.github/workflows/ci.yml`, `scripts/generate-mock-fixtures.js`) |
 | 폰트 | Google Fonts (Inter, Noto Sans KR), Material Symbols Outlined | 본문(영문 Inter / 한글 Noto Sans KR) + 아이콘 |
 
 ---
@@ -82,7 +89,8 @@
 bitleader-dev-HomePage/
 ├── .github/workflows/
 │   ├── deploy.yml                  # GitHub Pages 자동 배포 워크플로우
-│   └── lighthouse.yml              # 배포 후 Lighthouse 성능/접근성/SEO 점수 측정
+│   ├── ci.yml                      # PR/main push 시 MOCK_REPOS=1 빌드 회귀 검증
+│   └── lighthouse.yml              # 배포 후 Lighthouse 점수 측정 + 하한 강제 (lighthouserc.json)
 ├── src/
 │   ├── layouts/
 │   │   └── Layout.astro            # 전역 레이아웃 (폰트, 메타, canonical/OG URL 동적)
@@ -124,12 +132,16 @@ bitleader-dev-HomePage/
 │   ├── Thumbnail.png               # 카드 이미지 폴백 (README 이미지 없을 때 표시)
 │   ├── favicon.svg                 # SVG 파비콘 (시안 배경 + BL 모노그램)
 │   └── robots.txt                  # 크롤러 정책 (sitemap 위치 명시)
+├── scripts/
+│   ├── ensure-mock-stub.js         # prebuild 훅: fixture 부재 환경(CI 등)에서 빈 stub 자동 생성
+│   └── generate-mock-fixtures.js   # CI 전용: 30개 결정적 mock fixture 생성 (사용자 fixture 있으면 건너뜀)
 ├── .env.example                    # PAT 템플릿 (커밋 O)
 ├── .env                            # 로컬 전용 토큰 (커밋 X)
 ├── .gitignore
 ├── astro.config.mjs
 ├── tailwind.config.mjs
 ├── tsconfig.json
+├── lighthouserc.json               # Lighthouse CI 점수 하한 어설션 (perf/a11y/best-practices/seo)
 ├── package.json
 ├── README.md                       # 본 파일 (공개)
 ├── notes.md                        # 수정 이력 (로컬 전용, .gitignore)
@@ -189,6 +201,12 @@ npm run build
 ```bash
 npm run preview
 ```
+
+### 6) 타입/콘텐츠 정적 진단
+```bash
+npm run check
+```
+> `.astro`/`.ts` 의 타입 오류·미사용 변수 등을 빌드와 별개로 검사합니다. CI(`ci.yml`) 의 첫 단계로도 동일 명령이 실행됩니다.
 
 ---
 
@@ -408,6 +426,8 @@ UI 는 **한국어 / English** 두 언어를 지원합니다.
 | 릴리스 카드 헤더·"최신" 배지·"릴리스 노트"·"등록된 릴리스가 없습니다"·"+ N개 릴리스 더 보기" | |
 | 상대 시간 표기 (`오늘` / `N일 전` / 월·일) | |
 | 결과 카운트 (`저장소 N개 / 전체 M개`) | |
+| 빈 결과 안내 (`검색 결과가 없습니다` / `필터 초기화`) | |
+| 릴리스 본문 토글 (`릴리스 본문 보기`) | |
 | `<meta name="description">` SEO 문구 | |
 
 ### 번역 키 추가 방법
