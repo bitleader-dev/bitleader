@@ -39,9 +39,11 @@ jobs:
         run: npm ci
 
       - name: Build Astro site
-        # GITHUB_TOKEN은 GitHub Actions가 자동 주입 (public 저장소 읽기 권한 포함)
+        # 사용자 발급 PAT (PAT_GH_API) 사용. 자동 주입되는 secrets.GITHUB_TOKEN 은
+        # 일부 cross-repo release listing 응답에서 stale cache 를 받는 사례가 있어
+        # 별도 PAT 로 cache key 를 분리한다.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_GH_API }}
         run: npm run build
 
       - name: Upload Pages artifact
