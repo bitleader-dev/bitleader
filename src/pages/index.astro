@@ -58,7 +58,7 @@ const jsonLd = {
         </div>
       ) : (
         <div id="card-grid" class="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {cards.map((card) => <ProjectCard card={card} />)}
+          {cards.map((card, i) => <ProjectCard card={card} eager={i === 0} />)}
         </div>
         <!-- 검색/필터 결과 0건 안내 -->
         <div

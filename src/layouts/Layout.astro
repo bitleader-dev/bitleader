@@ -102,6 +102,8 @@ const canonicalUrl = Astro.site
     <!-- 폰트 로드: 영문은 Inter, 한글은 Noto Sans KR (Inter에 한글 글리프 없으므로 자동 fallback) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- LCP 카드 이미지 host: 첫 카드 README 이미지가 raw.githubusercontent.com 에서 로드됨 → connection setup 단축 -->
+    <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap"
       rel="stylesheet"

@@ -11,9 +11,11 @@ import { withBase } from '../lib/paths';
 
 interface Props {
   card: RepoCardData;
+  /** true 일 때 LCP 후보 첫 카드 이미지에 loading="eager" + fetchpriority="high" 적용 */
+  eager?: boolean;
 }
 
-const { card } = Astro.props;
+const { card, eager = false } = Astro.props;
 
 const displayName = card.displayName ?? card.name;
 
@@ -53,7 +55,8 @@ const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
       src={cardImage}
       alt={displayName}
-      loading="lazy"
+      loading={eager ? 'eager' : 'lazy'}
+      fetchpriority={eager ? 'high' : undefined}
       onerror={onImageError}
     />
     <!-- 북마크 버튼 (상단 좌측) — 클릭 시 링크 이동 차단하고 localStorage 토글 -->
