@@ -39,11 +39,13 @@ jobs:
         run: npm ci
 
       - name: Build Astro site
-        # 사용자 발급 PAT (PAT_GH_API) 사용. 자동 주입되는 secrets.GITHUB_TOKEN 은
-        # 일부 cross-repo release listing 응답에서 stale cache 를 받는 사례가 있어
-        # 별도 PAT 로 cache key 를 분리한다.
+        # GitHub Actions 자동 주입 secrets.GITHUB_TOKEN 사용 (rate limit 1000/h).
+        # 본 사이트 빌드는 저장소 N개 × API 3종(repos/readme/releases) 호출이라 한도 내.
+        # 주의: cross-repo release listing 에서 동일 토큰의 stale cache 가 다음 빌드까지
+        # 새 release 를 한 사이클 늦게 보여줄 수 있음. 즉시 반영이 필요하면 Actions 탭에서
+        # "Run workflow" 로 한 번 더 트리거하거나 PAT 를 secrets.PAT_GH_API 로 등록해 사용.
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_GH_API }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build
 
       - name: Upload Pages artifact
