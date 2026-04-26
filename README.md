@@ -81,7 +81,7 @@
 | OG 한글 폰트 | @fontsource/noto-sans-kr (devDep) | OG 이미지에서 한글 description 렌더 |
 | 언어 | TypeScript 5.x (strict) | 타입 안전성 |
 | 배포 | GitHub Pages + GitHub Actions | 정적 호스팅 + CI/CD |
-| 품질 감시 | treosh/lighthouse-ci-action (Actions 전용) | 배포 후 점수 측정 + **하한 강제** (perf 0.70 / a11y 0.95 / best-practices 0.95 / seo 0.95). 미달 시 워크플로우 실패 (`lighthouserc.json`) |
+| 품질 감시 | treosh/lighthouse-ci-action (Actions 전용) | 배포 후 점수 측정 + **하한 강제** (perf 0.70 / a11y 0.95 / best-practices 0.95 / seo 0.95). 3회 측정 → median 값으로 assertion 평가하여 측정 변동성 흡수. 미달 시 워크플로우 실패 (`lighthouserc.json`) |
 | 타입/콘텐츠 진단 | @astrojs/check (devDep) | `npm run check` 로 .astro/.ts 정적 진단 |
 | PR 회귀 검증 | GitHub Actions (Actions 전용) | PR/main push 시 `astro check` → 30개 mock fixture 생성 → `MOCK_REPOS=1` 빌드 → Playwright E2E 순차 실행으로 타입/번들/UX 회귀 차단 (`.github/workflows/ci.yml`, `scripts/generate-mock-fixtures.js`) |
 | E2E 테스트 | @playwright/test (devDep) | 검색·Topic·북마크·언어전환·상세 페이지·Back to Top 핵심 동선 자동 검증 (`tests/e2e/`, `playwright.config.ts`, `npm run test:e2e`) |
