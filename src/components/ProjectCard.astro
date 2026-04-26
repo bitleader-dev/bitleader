@@ -15,6 +15,8 @@ interface Props {
 
 const { card } = Astro.props;
 
+const displayName = card.displayName ?? card.name;
+
 // 본문에 표시할 설명: description 우선, 없으면 README 요약
 const bodyText = card.description?.trim() || card.summary || '';
 
@@ -50,7 +52,7 @@ const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
     <img
       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
       src={cardImage}
-      alt={card.name}
+      alt={displayName}
       loading="lazy"
       onerror={onImageError}
     />
@@ -89,7 +91,7 @@ const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
     }
   </div>
   <div class="p-6 flex flex-col flex-1">
-    <h4 class="font-headline-md text-base text-white">{card.name}</h4>
+    <h4 class="font-headline-md text-base text-white">{displayName}</h4>
     {
       bodyText && (
         <p class="text-zinc-400 text-sm mt-2 line-clamp-2">{bodyText}</p>

@@ -29,6 +29,7 @@ export interface GitHubReadme {
 // 카드 렌더링에 사용하는 정규화된 데이터
 export interface RepoCardData {
   name: string;
+  displayName: string | null; // overrides.displayName 으로 카드/상세 노출용 표시명 교체 (없으면 name 사용)
   description: string | null;
   url: string;
   language: string | null;
@@ -67,6 +68,7 @@ export interface GitHubRelease {
 // 상세 페이지 렌더링에 사용하는 정규화된 데이터
 export interface RepoDetailData {
   name: string;
+  displayName: string | null; // overrides.displayName 으로 노출용 표시명 교체 (없으면 name 사용)
   description: string | null;
   url: string; // GitHub 저장소 URL
   defaultBranch: string;
@@ -79,6 +81,7 @@ export interface RepoDetailData {
 // 저장소별 커스텀 오버라이드 (repo-overrides.json)
 export interface RepoOverride {
   downloadUrl?: string;
+  displayName?: string; // 카드/상세 페이지 노출 시 사용할 표시명 (URL 경로/식별자에는 영향 없음)
 }
 
 export type RepoOverridesMap = Record<string, RepoOverride>;

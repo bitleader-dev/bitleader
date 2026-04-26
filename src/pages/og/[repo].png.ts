@@ -24,7 +24,7 @@ export const GET: APIRoute = async ({ params }) => {
   }
 
   const png = await renderOgImage({
-    repoName: detail.name,
+    repoName: detail.displayName ?? detail.name,
     description: detail.description,
   });
 

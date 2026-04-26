@@ -24,13 +24,14 @@ export async function getStaticPaths() {
 }
 
 const { detail } = Astro.props;
-const pageTitle = `${detail.name} — BIT LEADER`;
+const displayName = detail.displayName ?? detail.name;
+const pageTitle = `${displayName} — BIT LEADER`;
 const ogImagePath = `/og/${detail.name}.png`;
 
 const jsonLd: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareSourceCode',
-  name: detail.name,
+  name: displayName,
   codeRepository: detail.url,
   url: detail.url,
 };
@@ -50,7 +51,7 @@ if (detail.description) jsonLd.description = detail.description;
       <!-- 저장소 이름 + About description (있을 때만) -->
       <div class="mb-8">
         <div class="flex items-center gap-2 text-white/40 font-label-md">
-          <span class="text-[#00F0FF] font-bold">{detail.name}</span>
+          <span class="text-[#00F0FF] font-bold">{displayName}</span>
         </div>
         {detail.description && (
           <p class="mt-2 text-zinc-400 text-base max-w-[800px]">{detail.description}</p>

@@ -35,6 +35,7 @@ async function buildCardData(repo: GitHubRepo): Promise<RepoCardData | null> {
 
   return {
     name: repo.name,
+    displayName: overrides[repo.name]?.displayName ?? null,
     description: repo.description,
     url: repo.html_url,
     language: repo.language,
@@ -173,6 +174,7 @@ async function computeRepoDetail(repoName: string): Promise<RepoDetailData | nul
 
   return {
     name: repo.name,
+    displayName: overrides[repo.name]?.displayName ?? null,
     description: repo.description,
     url: repo.html_url,
     defaultBranch: repo.default_branch,
