@@ -1,6 +1,7 @@
 {
   "ClipMemory-releases": {
-    "downloadUrl": "ms-windows-store://pdp/?ProductId=9nhksblrzt53"
+    "downloadUrl": "https://apps.microsoft.com/detail/9NHKSBLRZT53?hl=ko-kr&gl=KR&ocid=pdpshare",
+    "displayName": "ClipMemory"
   },
   "DokkaebiTerminal": {
     "displayName": "Dokkaebi Terminal"
