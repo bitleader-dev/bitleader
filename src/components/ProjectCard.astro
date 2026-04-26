@@ -40,7 +40,6 @@ const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
   data-name={card.name.toLowerCase()}
   data-description={(card.description ?? '').toLowerCase()}
   data-topics={topicsAttr}
-  data-language={card.language ?? ''}
   data-stars={card.stars}
   data-updated={card.updatedAt}
   data-created={card.createdAt}
@@ -114,11 +113,16 @@ const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
         </div>
       )
     }
-    <!-- 업데이트 날짜: mt-auto 로 카드 바닥에 고정 → 같은 행의 모든 카드가 동일 baseline 에 정렬 -->
-    <!-- data-iso 로 i18n.ts 가 언어 전환 시 formatRelative 로 자동 갱신 -->
-    <div class="mt-auto pt-3 text-[11px] text-zinc-500">
-      <span data-i18n="card_updated_label">업데이트</span>:
-      <span data-iso={card.updatedAt}>{card.updatedAt.slice(0, 10)}</span>
+    <!-- mt-auto 로 카드 바닥에 고정 → 같은 행 카드들이 동일 baseline 정렬. data-iso 는 i18n.ts 의 formatRelative 갱신 훅 -->
+    <div class="mt-auto pt-3 text-[11px] text-zinc-500 flex justify-between items-center gap-2">
+      <span>
+        <span data-i18n="card_updated_label">업데이트</span>:
+        <span data-iso={card.updatedAt}>{card.updatedAt.slice(0, 10)}</span>
+      </span>
+      <span>
+        <span data-i18n="card_open_issues_label">오픈이슈</span>:
+        <span>{card.openIssues}</span>
+      </span>
     </div>
   </div>
 </a>

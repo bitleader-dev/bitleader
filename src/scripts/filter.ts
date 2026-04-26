@@ -1,8 +1,8 @@
 // 클라이언트 사이드 검색 / Topic 필터(다중, AND) / 정렬 / 북마크 / 페이지네이션
 // 카드의 data-* 속성을 읽어 DOM을 조작하는 방식 (SSG 정적 사이트)
 // - applyFilters: 입력·필터·정렬 변경 시 전체 필터링 + 정렬 + DOM 재배치 + 카운트
-// - updateCount : 언어 변경 시 카운트 문자열만 재계산 (정렬·DOM 재배치 회피)
-// - updateTopicLabel : 언어 변경 시 Topic 버튼 라벨만 재계산 (선택 수 유지)
+// - updateCount : 언어 전환 시 카운트 문자열만 재계산 (정렬·DOM 재배치 회피)
+// - updateTopicLabel : 언어 전환 시 Topic 버튼 라벨만 재계산 (선택 수 유지)
 // - 북마크: localStorage 기반, 북마크된 카드는 정렬 결과의 최상단으로 고정
 // - 페이지네이션: 필터 결과가 PAGINATION_THRESHOLD 초과일 때만 UI 노출
 // - URL 쿼리 동기화: ?q=&topic=a,b,c&sort=&page= 형태 — 여러 topic 은 쉼표 조인
@@ -20,7 +20,6 @@ interface CardElement extends HTMLElement {
     name: string;
     description: string;
     topics: string;
-    language: string;
     stars: string;
     updated: string;
     created: string;
@@ -54,7 +53,6 @@ function initFilter() {
   const grid = document.getElementById('card-grid');
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   const sortSelect = document.getElementById('sort-order') as HTMLSelectElement | null;
-  const languageSelect = document.getElementById('language-filter') as HTMLSelectElement | null;
   const resultCount = document.getElementById('result-count');
 
   // Topic 다중 필터 요소 (FilterBar.astro 의 커스텀 드롭다운)
@@ -129,12 +127,10 @@ function initFilter() {
   };
 
   // URL 쿼리 → UI 상태 복원 (초기 1회)
-  // language 파라미터 키는 'language' (i18n 의 'lang' 과 충돌 방지)
   const restoreFromQuery = () => {
     const params = new URLSearchParams(location.search);
     const q = params.get('q');
     const topicParam = params.get('topic');
-    const languageParam = params.get('language');
     const sort = params.get('sort');
     const page = params.get('page');
     if (q !== null && searchInput) searchInput.value = q;
@@ -143,11 +139,6 @@ function initFilter() {
       for (const cb of topicCheckboxes) {
         cb.checked = wanted.has(cb.value);
       }
-    }
-    if (languageParam !== null && languageSelect) {
-      // 옵션에 존재하는 값만 적용 (없으면 무시 — 'all' 상태 유지)
-      const exists = Array.from(languageSelect.options).some((o) => o.value === languageParam);
-      if (exists) languageSelect.value = languageParam;
     }
     if (sort !== null && sortSelect && (VALID_SORTS as readonly string[]).includes(sort)) {
       sortSelect.value = sort;
@@ -163,11 +154,9 @@ function initFilter() {
     const params = new URLSearchParams();
     const q = (searchInput?.value ?? '').trim();
     const selected = getSelectedTopics();
-    const language = languageSelect?.value ?? '';
     const sort = sortSelect?.value ?? DEFAULT_SORT;
     if (q) params.set('q', q);
     if (selected.length > 0) params.set('topic', selected.join(','));
-    if (language) params.set('language', language);
     if (sort && sort !== DEFAULT_SORT) params.set('sort', sort);
     if (currentPage > 1) params.set('page', String(currentPage));
     const qs = params.toString();
@@ -189,7 +178,6 @@ function initFilter() {
   const applyFilters = () => {
     const query = (searchInput?.value ?? '').trim().toLowerCase();
     const selectedTopics = getSelectedTopics();
-    const selectedLanguage = languageSelect?.value ?? '';
     const sortKey = (sortSelect?.value ?? DEFAULT_SORT) as SortKey;
 
     const filtered = allCards.filter((card) => {
@@ -206,10 +194,6 @@ function initFilter() {
         for (const t of selectedTopics) {
           if (!cardTopics.includes(t)) return false;
         }
-      }
-      // 언어 단일 필터: 빈 문자열은 "전체" 의미라 통과
-      if (selectedLanguage && card.dataset.language !== selectedLanguage) {
-        return false;
       }
       return true;
     });
@@ -392,7 +376,6 @@ function initFilter() {
     searchTimer = setTimeout(resetToFirstPage, SEARCH_DEBOUNCE_MS);
   });
   sortSelect?.addEventListener('change', resetToFirstPage);
-  languageSelect?.addEventListener('change', resetToFirstPage);
 
   const scrollBehavior = (): ScrollBehavior =>
     window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
@@ -416,11 +399,10 @@ function initFilter() {
   // 북마크 버튼
   initBookmarkButtons();
 
-  // 필터 초기화 버튼: 검색어/Topic/언어/정렬 모두 기본값으로 되돌리고 1페이지로
+  // 필터 초기화 버튼: 검색어/Topic/정렬 모두 기본값으로 되돌리고 1페이지로
   resetButton?.addEventListener('click', () => {
     if (searchInput) searchInput.value = '';
     for (const cb of topicCheckboxes) cb.checked = false;
-    if (languageSelect) languageSelect.value = '';
     if (sortSelect) sortSelect.value = DEFAULT_SORT;
     currentPage = 1;
     applyFilters();

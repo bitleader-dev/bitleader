@@ -8,39 +8,12 @@
 
 interface Props {
   topics: string[];
-  languages: string[];
 }
 
-const { topics, languages } = Astro.props;
+const { topics } = Astro.props;
 ---
 
 <div class="flex flex-wrap items-center gap-6 mb-6">
-  <div class="relative min-w-[180px] flex items-center gap-3">
-    <label
-      for="language-filter"
-      class="text-zinc-500 font-label-md uppercase tracking-wider whitespace-nowrap"
-      data-i18n="label_language"
-    >
-      Language
-    </label>
-    <div class="relative flex-1 group">
-      <select
-        id="language-filter"
-        class="w-full appearance-none bg-surface-container-low border border-white/10 rounded px-4 py-2 text-sm text-white focus:outline-none focus:border-primary-container/50 focus:ring-1 focus:ring-primary-container/20 transition-all cursor-pointer"
-      >
-        <option class="bg-zinc-900" value="" data-i18n="language_all">전체 언어</option>
-        {languages.map((lang) => (
-          <option class="bg-zinc-900" value={lang}>{lang}</option>
-        ))}
-      </select>
-      <span
-        class="material-symbols-outlined absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none group-focus-within:text-primary-container"
-      >
-        expand_more
-      </span>
-    </div>
-  </div>
-
   <!-- Topic 다중 필터 -->
   <div class="relative min-w-[200px] flex items-center gap-3">
     <label

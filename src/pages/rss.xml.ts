@@ -8,7 +8,8 @@ import { collectRecentReleases } from '../lib/data';
 import { absoluteUrl, escapeXml } from '../lib/paths';
 
 export const GET: APIRoute = async ({ site }) => {
-  const items = await collectRecentReleases(20);
+  // RSS 는 저장소별 다건 포함해 최신 20건을 채운다 (perRepoLimit=20 = 저장소당 무제한 수준)
+  const items = await collectRecentReleases(20, 20);
   const selfUrl = absoluteUrl(site, '/rss.xml');
   const homeUrl = absoluteUrl(site, '/');
   const now = new Date().toUTCString();

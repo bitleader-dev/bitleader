@@ -15,6 +15,7 @@ export interface GitHubRepo {
   created_at: string;
   archived: boolean;
   fork: boolean;
+  open_issues_count: number; // 오픈 이슈/PR 합산 (GitHub API 원본 필드)
 }
 
 // GitHub REST API /repos/{owner}/{repo}/readme 응답
@@ -39,6 +40,7 @@ export interface RepoCardData {
   summary: string; // README 180자 요약
   archived: boolean; // GitHub 저장소 archived 플래그
   fork: boolean; // 다른 저장소의 fork 여부
+  openIssues: number; // 오픈 이슈/PR 개수 (카드 우측 표시)
 }
 
 // GitHub Release Asset (릴리스에 첨부된 바이너리 파일)

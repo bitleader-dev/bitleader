@@ -93,6 +93,7 @@ export function makeMockRepos(count = ${"30"}): GitHubRepo[] {
       created_at: new Date(now - (30 + i * 5) * day).toISOString(),
       archived: i % 7 === 0,
       fork: i % 11 === 0,
+      open_issues_count: (i * 7) % 30,
     };
   });
 }

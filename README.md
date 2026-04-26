@@ -17,15 +17,14 @@
 - **카드 이미지 폴백**: README에 이미지가 없거나 원격 이미지 로딩 실패 시 `public/Thumbnail.png` 기본 이미지 표시
 - **카드 대시보드**: 12-column 반응형 그리드 (데스크톱 3열 / 태블릿 2열 / 모바일 1열)
 - **카드 배지**: 저장소가 `archived` / `fork` 인 경우 카드 우상단에 배지 자동 표시
-- **업데이트 날짜**: 각 카드 본문 맨 아래에 저장소의 마지막 업데이트 날짜를 표시 (클라이언트 로드 시 상대 시간으로 변환 — `오늘`, `1일 전`, `N일 전`, 30일 이상은 월/일 표기. 언어 전환 시 함께 갱신)
+- **업데이트 날짜 + 오픈이슈**: 각 카드 본문 맨 아래에 좌측 `업데이트: <날짜>` (클라이언트 로드 시 상대 시간으로 변환 — `오늘`, `1일 전`, `N일 전`, 30일 이상은 월/일 표기. 언어 전환 시 함께 갱신), **같은 라인 우측 끝**에 `오픈이슈: <N>` 표시 (GitHub `open_issues_count` 원본 — 오픈된 Issue + Pull Request 합산, 0 포함 항상 노출)
 - **북마크**: 카드 좌상단 별(★) 버튼으로 즐겨찾기 토글 — 북마크된 저장소는 정렬 결과의 **최상단으로 고정**. 상태는 브라우저 `localStorage` 에 보관 (서버 저장 X)
-- **최근 릴리스**: 히어로 바로 아래에 전체 저장소 중 **최근 발행된 릴리스 3건** 자동 하이라이트
+- **최근 릴리스**: 히어로 바로 아래에 전체 저장소 중 **최근 발행된 릴리스 3건** 자동 하이라이트 (동일 프로젝트는 최신 1건만 노출 — 한 저장소가 섹션을 독점하지 않도록 저장소별 1건으로 중복 제거)
 - **검색**: 저장소 이름 + description + Topics 대상 실시간 검색
 - **필터**: Topic **다중 선택 (AND 조합)** — 여러 topic 을 체크하면 **모두 포함한** 카드만 남음
-- **언어 필터**: 단일 선택 — 카드의 `language` 가 일치하는 저장소만 표시. 옵션은 **빈도 내림차순**(많이 쓰인 언어가 위)
 - **별 카운트 chip**: ★ 1개 이상인 저장소는 카드 chip 줄에 `★ N` 표기 (정렬 키와 시각적 일관성)
 - **정렬**: 최근 업데이트순 / 스타순 / 이름순 / 생성일순 (4가지)
-- **URL 공유**: 현재 검색/필터/정렬/페이지 상태가 URL 쿼리(`?q=&topic=&language=&sort=&page=`)에 자동 반영되어 **링크로 필터 결과 공유 가능**
+- **URL 공유**: 현재 검색/필터/정렬/페이지 상태가 URL 쿼리(`?q=&topic=&sort=&page=`)에 자동 반영되어 **링크로 필터 결과 공유 가능**
 - **페이지네이션**: 저장소 수가 12개를 초과하면 자동으로 페이지 네비게이션이 노출 (12개 이하는 한 번에 전체 표시)
 - **자동 갱신**: GitHub Actions 스케줄로 **매일 UTC 00:00 (= KST 09:00)** 자동 재빌드 + 배포 (GitHub 부하에 따라 최대 10~30분 지연 가능). push / 수동 실행 / cron 조정도 지원 — "배포", "사이트 업데이트 주기" 섹션 참고
 - **빈 결과 안내**: 검색·필터로 결과가 0건이면 "검색 결과가 없습니다" 안내 + **필터 초기화** 버튼이 노출되어 한 번에 검색어/Topic/정렬을 모두 기본값으로 되돌림
@@ -85,7 +84,7 @@
 | 품질 감시 | treosh/lighthouse-ci-action (Actions 전용) | 배포 후 점수 측정 + **하한 강제** (perf 0.70 / a11y 0.95 / best-practices 0.95 / seo 0.95). 미달 시 워크플로우 실패 (`lighthouserc.json`) |
 | 타입/콘텐츠 진단 | @astrojs/check (devDep) | `npm run check` 로 .astro/.ts 정적 진단 |
 | PR 회귀 검증 | GitHub Actions (Actions 전용) | PR/main push 시 `astro check` → 30개 mock fixture 생성 → `MOCK_REPOS=1` 빌드 → Playwright E2E 순차 실행으로 타입/번들/UX 회귀 차단 (`.github/workflows/ci.yml`, `scripts/generate-mock-fixtures.js`) |
-| E2E 테스트 | @playwright/test (devDep) | 검색·Topic·언어·북마크·언어전환·상세 페이지·Back to Top 핵심 동선 자동 검증 (`tests/e2e/`, `playwright.config.ts`, `npm run test:e2e`) |
+| E2E 테스트 | @playwright/test (devDep) | 검색·Topic·북마크·언어전환·상세 페이지·Back to Top 핵심 동선 자동 검증 (`tests/e2e/`, `playwright.config.ts`, `npm run test:e2e`) |
 | 의존성 자동 추적 | Dependabot (`.github/dependabot.yml`) | 매주 월요일 09:00 KST, npm + github-actions 의 patch/minor 묶음 PR 자동 생성 (commit prefix `chore(deps)` / `chore(actions)`) |
 | 폰트 | Google Fonts (Inter, Noto Sans KR), Material Symbols Outlined | 본문(영문 Inter / 한글 Noto Sans KR) + 아이콘 |
 
@@ -148,7 +147,7 @@ bitleader-dev-HomePage/
 │   └── build-mock.js               # cross-platform: MOCK_REPOS=1 환경변수 주입 후 build (Playwright e2e 용)
 ├── tests/
 │   └── e2e/
-│       ├── dashboard.spec.ts       # 메인 핵심 동선 (검색/Topic/언어/북마크/언어전환/단축키)
+│       ├── dashboard.spec.ts       # 메인 핵심 동선 (검색/Topic/북마크/언어전환/단축키)
 │       └── detail.spec.ts          # 상세 페이지 동선 (README/Releases/JSON-LD/Back to Top)
 ├── .env.example                    # PAT 템플릿 (커밋 O)
 ├── .env                            # 로컬 전용 토큰 (커밋 X)
@@ -445,7 +444,7 @@ UI 는 **한국어 / English** 두 언어를 지원합니다.
 | 번역됨 | 번역 안 됨 (GitHub 원본 유지) |
 |---|---|
 | 검색창 placeholder | 저장소 이름 |
-| 필터·정렬 드롭다운 라벨·옵션 (언어 필터 포함) | 저장소 Description |
+| 필터·정렬 드롭다운 라벨·옵션 | 저장소 Description |
 | 상단 헤더 "홈으로" 버튼 | README 본문 |
 | 히어로 문구, Footer | Topics 값 |
 | 액션 버튼 (다운로드 / GitHub 저장소) | Release 태그·본문 |
