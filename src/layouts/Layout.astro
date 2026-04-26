@@ -104,16 +104,40 @@ const canonicalUrl = Astro.site
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- LCP 카드 이미지 host: 첫 카드 README 이미지가 raw.githubusercontent.com 에서 로드됨 → connection setup 단축 -->
     <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin />
+    {/* 폰트 stylesheet 비차단 로드: media="print" 로 받아 render-blocking 회피, load 후 inline script 가 media="all" 로 전환.
+        display=swap 으로 도착 전 fallback 폰트 즉시 사용. JS 비활성 환경은 noscript 폴백으로 동기 stylesheet 로드. */}
     <link
+      data-defer-css
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap"
       rel="stylesheet"
+      media="print"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Noto+Sans+KR:wght@400;500;600;700;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
 
     <!-- Material Symbols Outlined (아이콘) -->
     <link
+      data-defer-css
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
       rel="stylesheet"
+      media="print"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+    <script is:inline>
+      // 비차단으로 받은 stylesheet 를 로드 완료 시 media="all" 로 전환해 실제 적용
+      document.querySelectorAll('link[data-defer-css]').forEach(function (l) {
+        l.addEventListener('load', function () { l.media = 'all'; }, { once: true });
+      });
+    </script>
 
     {/* Schema.org JSON-LD: 검색엔진 리치 스니펫용 구조화 데이터 (선택적 주입) */}
     {jsonLd && (

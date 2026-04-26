@@ -50,3 +50,6 @@ test-results/
 playwright-report/
 blob-report/
 .playwright/
+
+# Lighthouse 분석용 임시 폴더 (gh run download 결과물, 커밋 제외)
+.lighthouse-tmp/
