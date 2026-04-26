@@ -18,14 +18,15 @@ export const GET: APIRoute = async ({ site }) => {
     .map((item) => {
       const repoUrl = absoluteUrl(site, `/${item.repoName}/`);
       const pubDate = new Date(item.publishedAt).toUTCString();
+      const display = item.displayName ?? item.repoName;
       return (
         `<item>` +
-        `<title>${escapeXml(item.repoName)} ${escapeXml(item.tag)}</title>` +
+        `<title>${escapeXml(display)} ${escapeXml(item.tag)}</title>` +
         `<link>${escapeXml(item.url)}</link>` +
         `<guid isPermaLink="false">${escapeXml(item.url)}</guid>` +
         `<pubDate>${pubDate}</pubDate>` +
         `<description>${escapeXml(item.title)}</description>` +
-        `<source url="${escapeXml(repoUrl)}">${escapeXml(item.repoName)}</source>` +
+        `<source url="${escapeXml(repoUrl)}">${escapeXml(display)}</source>` +
         `</item>`
       );
     })

@@ -88,11 +88,13 @@ export async function collectRecentReleases(
   const repos = await fetchTargetRepos();
   const perRepoTop = await mapLimit(repos, API_CONCURRENCY, async (r) => {
     const rs = await fetchReleases(r.name);
+    const displayName = overrides[r.name]?.displayName ?? null;
     const filtered: RecentReleaseItem[] = [];
     for (const rel of rs) {
       if (rel.draft || !rel.published_at) continue;
       filtered.push({
         repoName: r.name,
+        displayName,
         tag: rel.tag_name,
         title: rel.name?.trim() || rel.tag_name,
         publishedAt: rel.published_at,

@@ -89,6 +89,7 @@ export type RepoOverridesMap = Record<string, RepoOverride>;
 // 최근 릴리스 피드에 사용하는 정규화 아이템 (빌드 타임 수집)
 export interface RecentReleaseItem {
   repoName: string;
+  displayName: string | null; // overrides.displayName 으로 노출용 표시명 교체 (없으면 repoName 사용)
   tag: string;
   title: string;
   publishedAt: string; // ISO 문자열
