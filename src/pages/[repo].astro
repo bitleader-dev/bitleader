@@ -25,11 +25,24 @@ export async function getStaticPaths() {
 
 const { detail } = Astro.props;
 const pageTitle = `${detail.name} — BIT LEADER`;
-// 저장소별 동적 OG 이미지 경로 (빌드 타임에 /og/<repo>.png 로 생성됨)
 const ogImagePath = `/og/${detail.name}.png`;
+
+const jsonLd: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'SoftwareSourceCode',
+  name: detail.name,
+  codeRepository: detail.url,
+  url: detail.url,
+};
+if (detail.description) jsonLd.description = detail.description;
 ---
 
-<Layout title={pageTitle} description={detail.description ?? undefined} ogImagePath={ogImagePath}>
+<Layout
+  title={pageTitle}
+  description={detail.description ?? undefined}
+  ogImagePath={ogImagePath}
+  jsonLd={jsonLd}
+>
   <DetailHeader />
 
   <main id="main" class="pt-16 min-h-screen">
@@ -47,7 +60,7 @@ const ogImagePath = `/og/${detail.name}.png`;
       <div class="grid grid-cols-12 gap-8">
         <!-- 왼쪽: README 패널 -->
         <div class="col-span-12 lg:col-span-8">
-          <ReadmePanel html={detail.readmeHtml} />
+          <ReadmePanel html={detail.readmeHtml} markdown={detail.readmeMarkdown} />
         </div>
 
         <!-- 오른쪽: Releases 카드 + 액션 버튼 -->
@@ -88,7 +101,8 @@ const ogImagePath = `/og/${detail.name}.png`;
       };
       window.addEventListener('scroll', update, { passive: true });
       btn.addEventListener('click', function () {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
       });
       update();
     })();

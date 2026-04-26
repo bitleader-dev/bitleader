@@ -22,8 +22,10 @@
 - **최근 릴리스**: 히어로 바로 아래에 전체 저장소 중 **최근 발행된 릴리스 3건** 자동 하이라이트
 - **검색**: 저장소 이름 + description + Topics 대상 실시간 검색
 - **필터**: Topic **다중 선택 (AND 조합)** — 여러 topic 을 체크하면 **모두 포함한** 카드만 남음
+- **언어 필터**: 단일 선택 — 카드의 `language` 가 일치하는 저장소만 표시. 옵션은 **빈도 내림차순**(많이 쓰인 언어가 위)
+- **별 카운트 chip**: ★ 1개 이상인 저장소는 카드 chip 줄에 `★ N` 표기 (정렬 키와 시각적 일관성)
 - **정렬**: 최근 업데이트순 / 스타순 / 이름순 / 생성일순 (4가지)
-- **URL 공유**: 현재 검색/필터/정렬/페이지 상태가 URL 쿼리(`?q=&topic=&sort=&page=`)에 자동 반영되어 **링크로 필터 결과 공유 가능**
+- **URL 공유**: 현재 검색/필터/정렬/페이지 상태가 URL 쿼리(`?q=&topic=&language=&sort=&page=`)에 자동 반영되어 **링크로 필터 결과 공유 가능**
 - **페이지네이션**: 저장소 수가 12개를 초과하면 자동으로 페이지 네비게이션이 노출 (12개 이하는 한 번에 전체 표시)
 - **자동 갱신**: GitHub Actions 스케줄로 **매일 UTC 00:00 (= KST 09:00)** 자동 재빌드 + 배포 (GitHub 부하에 따라 최대 10~30분 지연 가능). push / 수동 실행 / cron 조정도 지원 — "배포", "사이트 업데이트 주기" 섹션 참고
 - **빈 결과 안내**: 검색·필터로 결과가 0건이면 "검색 결과가 없습니다" 안내 + **필터 초기화** 버튼이 노출되어 한 번에 검색어/Topic/정렬을 모두 기본값으로 되돌림
@@ -34,6 +36,7 @@
 - **헤더 영역**: README 카드 위에 저장소 이름(시안색) + About Description 한 줄 표시 (description 없으면 이름만)
 - **2열 레이아웃**: 왼쪽 README 전문 + 오른쪽 Releases 카드 및 액션 버튼
 - **README 렌더링**: Markdown → 안전한 HTML 변환 (sanitize-html로 XSS 방지)
+- **README 본문 복사 버튼**: 카드 헤더 우측의 복사 아이콘 클릭 → README **마크다운 원문**(헤딩 `#`, 리스트 `-`, 링크 `[text](url)`, 코드블록 ```` ``` ```` 등 syntax 그대로 보존)을 클립보드에 복사. 다른 마크다운 에디터/문서에 그대로 붙여넣기 가능. 복사 직후 1.5초간 ✓ 체크 아이콘 + 시안색 강조로 시각적 피드백 (`navigator.clipboard.writeText`)
 - **코드 syntax highlighting**: 빌드 타임에 `shiki`(github-dark 테마) 로 README/릴리스 본문 코드 블록을 토큰 색상화. 미지원 언어는 일반 텍스트로 안전 폴백, 디자인 톤(검정 배경 + 시안 좌측 보더) 유지
 - **상대 경로 자동 해결**: README 내 이미지/링크는 GitHub raw/blob 절대 경로로 변환
 - **릴리스 카드**: 최신 1개 상세(최신 배지 + **릴리스 본문 보기** 토글로 펼침/접힘 + 릴리스 노트 링크) + 과거 2개 간략 + "+ N개 릴리스 더 보기" 링크 (0개면 "등록된 릴리스가 없습니다")
@@ -46,10 +49,12 @@
 - README.md 파일이 없는 저장소는 카드에서 제외
 
 ### SEO / 공유 관련
-- **sitemap.xml**: `@astrojs/sitemap` 이 빌드 타임에 자동 생성 (`/bitleader/sitemap-index.xml`)
+- **sitemap.xml**: `@astrojs/sitemap` 이 빌드 타임에 자동 생성 (`/bitleader/sitemap-index.xml`). 각 URL 의 `<lastmod>` 는 저장소 URL 의 경우 해당 저장소 `updated_at`, 그 외(메인/RSS/404)는 빌드 시각으로 자동 채워져 크롤러 재방문 효율↑
+- **JSON-LD 구조화 데이터**: 메인 페이지에는 `WebSite` + `Organization` 그래프, 저장소 상세 페이지에는 `SoftwareSourceCode` 를 head 에 `<script type="application/ld+json">` 로 주입. 검색 결과 리치 스니펫 노출 가능 (`src/layouts/Layout.astro` 의 `jsonLd` prop)
 - **robots.txt**: 전체 크롤링 허용 + sitemap 위치 명시 (`public/robots.txt`)
 - **RSS 피드**: 전체 저장소의 최신 릴리스 20건을 `/bitleader/rss.xml` 로 노출. `Layout.astro` head 에 `<link rel="alternate" type="application/rss+xml">` 를 주입하여 브라우저·RSS 리더가 자동 발견. 의존성 없이 순수 XML 문자열로 생성(`src/pages/rss.xml.ts`)
 - **keywords 메타**: 전역 `<meta name="keywords">` 로 핵심 키워드(Bitleader/GitHub/대시보드/릴리스 등) 명시
+- **테마 일관성 메타**: `<meta name="theme-color" content="#0A0A0A">` (Android Chrome 주소창/상태바) + `<meta name="color-scheme" content="dark">` (브라우저 chrome 의 스크롤바·기본 폼 컨트롤이 다크와 매칭)
 - **canonical / Open Graph / X(구 Twitter) Card**: 각 페이지별로 절대 URL 주입 — **저장소 상세 페이지를 메신저·SNS 에 붙여넣어도 해당 저장소 페이지 미리보기가 정확히 표시됨**. X 는 리브랜딩 후에도 `twitter:*` 메타 규격을 그대로 사용하므로 기존 태그 이름 유지
 - **저장소별 동적 OG 이미지**: `satori` + `@resvg/resvg-js` 로 빌드 타임에 저장소당 1장씩 1200×630 PNG 를 `/bitleader/og/<repo>.png` 로 생성. Lumina Dark 톤 + 저장소 이름(큰 폰트) + description + BIT LEADER 로고 구성. 상세 페이지 공유 시 이 이미지가 `og:image` 로 사용되어 SNS/메신저 미리보기에 저장소별로 구분된 카드가 노출됨.
   - 영문 폰트: Google Fonts 에서 빌드 타임에 Inter(400/700) TTF/WOFF 를 1회 fetch 후 메모리 캐싱
@@ -60,6 +65,7 @@
 - **스킵 링크**: 키보드 Tab 첫 포커스 시 좌상단에 "본문 바로가기" 버튼이 슬라이드-인되어 `<main id="main">` 랜드마크로 즉시 이동
 - **focus-visible 포커스 링**: 모든 인터랙티브 요소(링크·버튼·입력·드롭다운)에 키보드 포커스 전용 시안 아웃라인. 마우스 클릭에는 노이즈 없음
 - **aria-\* 보강**: 페이지네이션 prev/next `aria-label` + `#page-info` `aria-live="polite"`, Topic 필터 `aria-controls`/`aria-haspopup`/`aria-expanded`, 북마크 버튼 `aria-pressed`, 모든 aria-label 은 i18n 연동(언어 전환 시 자동 갱신)
+- **모션 민감 사용자 대응**: `@media (prefers-reduced-motion: reduce)` 로 모든 트랜지션/애니메이션을 즉시 종료, smooth scroll 도 instant 로 분기 (페이지네이션 클릭, Back to Top). OS 의 "동작 줄이기" 설정을 자동 반영
 
 ---
 
@@ -78,7 +84,9 @@
 | 배포 | GitHub Pages + GitHub Actions | 정적 호스팅 + CI/CD |
 | 품질 감시 | treosh/lighthouse-ci-action (Actions 전용) | 배포 후 점수 측정 + **하한 강제** (perf 0.80 / a11y 0.95 / best-practices 0.95 / seo 0.95). 미달 시 워크플로우 실패 (`lighthouserc.json`) |
 | 타입/콘텐츠 진단 | @astrojs/check (devDep) | `npm run check` 로 .astro/.ts 정적 진단 |
-| PR 회귀 검증 | GitHub Actions (Actions 전용) | PR/main push 시 `astro check` → 30개 mock fixture 생성 → `MOCK_REPOS=1` 빌드 순차 실행으로 타입/번들 회귀 차단 (`.github/workflows/ci.yml`, `scripts/generate-mock-fixtures.js`) |
+| PR 회귀 검증 | GitHub Actions (Actions 전용) | PR/main push 시 `astro check` → 30개 mock fixture 생성 → `MOCK_REPOS=1` 빌드 → Playwright E2E 순차 실행으로 타입/번들/UX 회귀 차단 (`.github/workflows/ci.yml`, `scripts/generate-mock-fixtures.js`) |
+| E2E 테스트 | @playwright/test (devDep) | 검색·Topic·언어·북마크·언어전환·상세 페이지·Back to Top 핵심 동선 자동 검증 (`tests/e2e/`, `playwright.config.ts`, `npm run test:e2e`) |
+| 의존성 자동 추적 | Dependabot (`.github/dependabot.yml`) | 매주 월요일 09:00 KST, npm + github-actions 의 patch/minor 묶음 PR 자동 생성 (commit prefix `chore(deps)` / `chore(actions)`) |
 | 폰트 | Google Fonts (Inter, Noto Sans KR), Material Symbols Outlined | 본문(영문 Inter / 한글 Noto Sans KR) + 아이콘 |
 
 ---
@@ -87,10 +95,12 @@
 
 ```
 bitleader-dev-HomePage/
-├── .github/workflows/
-│   ├── deploy.yml                  # GitHub Pages 자동 배포 워크플로우
-│   ├── ci.yml                      # PR/main push 시 MOCK_REPOS=1 빌드 회귀 검증
-│   └── lighthouse.yml              # 배포 후 Lighthouse 점수 측정 + 하한 강제 (lighthouserc.json)
+├── .github/
+│   ├── workflows/
+│   │   ├── deploy.yml              # GitHub Pages 자동 배포 워크플로우
+│   │   ├── ci.yml                  # PR/main push 시 check → MOCK_REPOS=1 빌드 → Playwright E2E
+│   │   └── lighthouse.yml          # 배포 후 Lighthouse 점수 측정 + 하한 강제 (lighthouserc.json)
+│   └── dependabot.yml              # 매주 월요일 09:00 KST npm/github-actions 자동 의존성 업데이트
 ├── src/
 │   ├── layouts/
 │   │   └── Layout.astro            # 전역 레이아웃 (폰트, 메타, canonical/OG URL 동적)
@@ -134,7 +144,12 @@ bitleader-dev-HomePage/
 │   └── robots.txt                  # 크롤러 정책 (sitemap 위치 명시)
 ├── scripts/
 │   ├── ensure-mock-stub.js         # prebuild 훅: fixture 부재 환경(CI 등)에서 빈 stub 자동 생성
-│   └── generate-mock-fixtures.js   # CI 전용: 30개 결정적 mock fixture 생성 (사용자 fixture 있으면 건너뜀)
+│   ├── generate-mock-fixtures.js   # CI 전용: 30개 결정적 mock fixture 생성 (사용자 fixture 있으면 건너뜀)
+│   └── build-mock.js               # cross-platform: MOCK_REPOS=1 환경변수 주입 후 build (Playwright e2e 용)
+├── tests/
+│   └── e2e/
+│       ├── dashboard.spec.ts       # 메인 핵심 동선 (검색/Topic/언어/북마크/언어전환/단축키)
+│       └── detail.spec.ts          # 상세 페이지 동선 (README/Releases/JSON-LD/Back to Top)
 ├── .env.example                    # PAT 템플릿 (커밋 O)
 ├── .env                            # 로컬 전용 토큰 (커밋 X)
 ├── .gitignore
@@ -142,6 +157,7 @@ bitleader-dev-HomePage/
 ├── tailwind.config.mjs
 ├── tsconfig.json
 ├── lighthouserc.json               # Lighthouse CI 점수 하한 어설션 (perf/a11y/best-practices/seo)
+├── playwright.config.ts            # Playwright E2E 설정 (chromium 단일, preview 자동 webServer)
 ├── package.json
 ├── README.md                       # 본 파일 (공개)
 ├── notes.md                        # 수정 이력 (로컬 전용, .gitignore)
@@ -207,6 +223,16 @@ npm run preview
 npm run check
 ```
 > `.astro`/`.ts` 의 타입 오류·미사용 변수 등을 빌드와 별개로 검사합니다. CI(`ci.yml`) 의 첫 단계로도 동일 명령이 실행됩니다.
+
+### 7) E2E 테스트 실행
+```bash
+# 처음 1회만: 브라우저 다운로드
+npx playwright install chromium
+
+# 30개 mock fixture 위에서 핵심 동선 검증 (검색/필터/북마크/언어전환/상세 페이지/Back to Top)
+npm run test:e2e
+```
+> webServer 가 자동으로 `MOCK_REPOS=1 npm run build` 후 `astro preview` 를 띄웁니다(`scripts/build-mock.js` 가 cross-platform 환경변수 주입). 사전에 빌드를 끝낸 상태라면 `E2E_SKIP_BUILD=1 npx playwright test` 로 preview 만 띄울 수도 있습니다(CI 가 이 모드로 동작).
 
 ---
 
@@ -419,7 +445,7 @@ UI 는 **한국어 / English** 두 언어를 지원합니다.
 | 번역됨 | 번역 안 됨 (GitHub 원본 유지) |
 |---|---|
 | 검색창 placeholder | 저장소 이름 |
-| 필터·정렬 드롭다운 라벨·옵션 | 저장소 Description |
+| 필터·정렬 드롭다운 라벨·옵션 (언어 필터 포함) | 저장소 Description |
 | 상단 헤더 "홈으로" 버튼 | README 본문 |
 | 히어로 문구, Footer | Topics 값 |
 | 액션 버튼 (다운로드 / GitHub 저장소) | Release 태그·본문 |
@@ -428,6 +454,7 @@ UI 는 **한국어 / English** 두 언어를 지원합니다.
 | 결과 카운트 (`저장소 N개 / 전체 M개`) | |
 | 빈 결과 안내 (`검색 결과가 없습니다` / `필터 초기화`) | |
 | 릴리스 본문 토글 (`릴리스 본문 보기`) | |
+| README 복사 버튼 aria-label | |
 | `<meta name="description">` SEO 문구 | |
 
 ### 번역 키 추가 방법

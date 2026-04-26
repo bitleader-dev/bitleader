@@ -44,3 +44,9 @@ Thumbs.db
 
 # 빌드 캐시
 .cache/
+
+# Playwright E2E 결과물 (커밋 제외)
+test-results/
+playwright-report/
+blob-report/
+.playwright/

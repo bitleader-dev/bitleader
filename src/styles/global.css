@@ -219,3 +219,19 @@ body {
   background-color: #00f0ff;
   color: #006970;
 }
+
+/* 모션 민감 사용자 대응: prefers-reduced-motion 시 모든 트랜지션/애니메이션을 즉시 종료 + smooth scroll 비활성 */
+/* OS 설정(Windows: 설정 → 접근성 → 시각 효과 → 애니메이션 효과 끄기 / macOS: 손쉬운 사용 → 디스플레이 → 동작 줄이기) 을 반영 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  html {
+    scroll-behavior: auto !important;
+  }
+}

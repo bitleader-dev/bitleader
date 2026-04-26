@@ -20,6 +20,7 @@ interface CardElement extends HTMLElement {
     name: string;
     description: string;
     topics: string;
+    language: string;
     stars: string;
     updated: string;
     created: string;
@@ -53,6 +54,7 @@ function initFilter() {
   const grid = document.getElementById('card-grid');
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
   const sortSelect = document.getElementById('sort-order') as HTMLSelectElement | null;
+  const languageSelect = document.getElementById('language-filter') as HTMLSelectElement | null;
   const resultCount = document.getElementById('result-count');
 
   // Topic 다중 필터 요소 (FilterBar.astro 의 커스텀 드롭다운)
@@ -127,10 +129,12 @@ function initFilter() {
   };
 
   // URL 쿼리 → UI 상태 복원 (초기 1회)
+  // language 파라미터 키는 'language' (i18n 의 'lang' 과 충돌 방지)
   const restoreFromQuery = () => {
     const params = new URLSearchParams(location.search);
     const q = params.get('q');
     const topicParam = params.get('topic');
+    const languageParam = params.get('language');
     const sort = params.get('sort');
     const page = params.get('page');
     if (q !== null && searchInput) searchInput.value = q;
@@ -139,6 +143,11 @@ function initFilter() {
       for (const cb of topicCheckboxes) {
         cb.checked = wanted.has(cb.value);
       }
+    }
+    if (languageParam !== null && languageSelect) {
+      // 옵션에 존재하는 값만 적용 (없으면 무시 — 'all' 상태 유지)
+      const exists = Array.from(languageSelect.options).some((o) => o.value === languageParam);
+      if (exists) languageSelect.value = languageParam;
     }
     if (sort !== null && sortSelect && (VALID_SORTS as readonly string[]).includes(sort)) {
       sortSelect.value = sort;
@@ -154,9 +163,11 @@ function initFilter() {
     const params = new URLSearchParams();
     const q = (searchInput?.value ?? '').trim();
     const selected = getSelectedTopics();
+    const language = languageSelect?.value ?? '';
     const sort = sortSelect?.value ?? DEFAULT_SORT;
     if (q) params.set('q', q);
     if (selected.length > 0) params.set('topic', selected.join(','));
+    if (language) params.set('language', language);
     if (sort && sort !== DEFAULT_SORT) params.set('sort', sort);
     if (currentPage > 1) params.set('page', String(currentPage));
     const qs = params.toString();
@@ -178,6 +189,7 @@ function initFilter() {
   const applyFilters = () => {
     const query = (searchInput?.value ?? '').trim().toLowerCase();
     const selectedTopics = getSelectedTopics();
+    const selectedLanguage = languageSelect?.value ?? '';
     const sortKey = (sortSelect?.value ?? DEFAULT_SORT) as SortKey;
 
     const filtered = allCards.filter((card) => {
@@ -194,6 +206,10 @@ function initFilter() {
         for (const t of selectedTopics) {
           if (!cardTopics.includes(t)) return false;
         }
+      }
+      // 언어 단일 필터: 빈 문자열은 "전체" 의미라 통과
+      if (selectedLanguage && card.dataset.language !== selectedLanguage) {
+        return false;
       }
       return true;
     });
@@ -376,30 +392,35 @@ function initFilter() {
     searchTimer = setTimeout(resetToFirstPage, SEARCH_DEBOUNCE_MS);
   });
   sortSelect?.addEventListener('change', resetToFirstPage);
+  languageSelect?.addEventListener('change', resetToFirstPage);
+
+  const scrollBehavior = (): ScrollBehavior =>
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
 
   // 페이지네이션 버튼
   pagePrev?.addEventListener('click', () => {
     if (currentPage > 1) {
       currentPage -= 1;
       applyFilters();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: scrollBehavior() });
     }
   });
   pageNext?.addEventListener('click', () => {
     if (currentPage < getTotalPages()) {
       currentPage += 1;
       applyFilters();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: scrollBehavior() });
     }
   });
 
   // 북마크 버튼
   initBookmarkButtons();
 
-  // 필터 초기화 버튼: 검색어/Topic/정렬 모두 기본값으로 되돌리고 1페이지로
+  // 필터 초기화 버튼: 검색어/Topic/언어/정렬 모두 기본값으로 되돌리고 1페이지로
   resetButton?.addEventListener('click', () => {
     if (searchInput) searchInput.value = '';
     for (const cb of topicCheckboxes) cb.checked = false;
+    if (languageSelect) languageSelect.value = '';
     if (sortSelect) sortSelect.value = DEFAULT_SORT;
     currentPage = 1;
     applyFilters();

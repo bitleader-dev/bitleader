@@ -40,3 +40,21 @@ jobs:
         env:
           MOCK_REPOS: '1'
         run: npm run build
+
+      - name: Install Playwright browsers (chromium)
+        # E2E 가 chromium 1개만 사용하므로 deps + chromium 만 설치 (CI 시간 절약)
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E (Playwright on built dist via preview)
+        # webServer 가 build 를 다시 돌리지 않도록 E2E_SKIP_BUILD=1 로 preview 만 띄움
+        env:
+          E2E_SKIP_BUILD: '1'
+        run: npm run test:e2e
+
+      - name: Upload Playwright report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

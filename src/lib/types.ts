@@ -69,6 +69,7 @@ export interface RepoDetailData {
   url: string; // GitHub 저장소 URL
   defaultBranch: string;
   readmeHtml: string; // sanitize된 README HTML
+  readmeMarkdown: string; // 클립보드 복사용 raw markdown 원문 (변환 전)
   releases: GitHubRelease[];
   downloadUrl: string | null; // overrides 또는 Release asset, 없으면 null
 }

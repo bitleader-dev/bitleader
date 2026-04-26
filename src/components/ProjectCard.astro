@@ -40,6 +40,7 @@ const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
   data-name={card.name.toLowerCase()}
   data-description={(card.description ?? '').toLowerCase()}
   data-topics={topicsAttr}
+  data-language={card.language ?? ''}
   data-stars={card.stars}
   data-updated={card.updatedAt}
   data-created={card.createdAt}
@@ -96,13 +97,20 @@ const onImageError = `this.onerror=null;this.src='${fallbackImage}';`;
       )
     }
     {
-      chips.length > 0 && (
-        <div class="mt-4 flex gap-2 flex-wrap">
+      (chips.length > 0 || card.stars > 0) && (
+        <div class="mt-4 flex gap-2 flex-wrap items-center">
           {chips.map((c) => (
             <span class="text-[10px] border border-white/10 px-2 py-0.5 rounded text-zinc-500 uppercase">
               {c}
             </span>
           ))}
+          {/* 별 카운트 chip — 정렬 키와 일관되게 시각화 (★ + 개수) */}
+          {card.stars > 0 && (
+            <span class="text-[10px] inline-flex items-center gap-1 border border-amber-400/30 px-2 py-0.5 rounded text-amber-300/90">
+              <span class="material-symbols-outlined text-[12px] leading-none">star</span>
+              {card.stars}
+            </span>
+          )}
         </div>
       )
     }

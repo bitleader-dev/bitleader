@@ -74,6 +74,19 @@ export function collectTopics(cards: RepoCardData[]): string[] {
   return Array.from(set).sort();
 }
 
+// 카드들의 language 를 빈도 내림차순으로 수집 (필터 드롭다운용)
+// null/빈 값은 제외. 동일 빈도면 알파벳 오름차순 (안정 정렬).
+export function collectLanguages(cards: RepoCardData[]): string[] {
+  const counts = new Map<string, number>();
+  for (const c of cards) {
+    if (!c.language) continue;
+    counts.set(c.language, (counts.get(c.language) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([lang]) => lang);
+}
+
 // 전체 대상 저장소의 릴리스를 수집해 발행일 기준 최신 N개 반환 (메인 페이지 하이라이트용)
 // - fetchReleases 는 Phase 2 메모이제이션으로 재호출 비용이 0
 // - 저장소별로 발행 기준 최신 limit 개만 먼저 추려 메모리 peak 을 낮춘다
@@ -103,13 +116,22 @@ export async function collectRecentReleases(limit = 3): Promise<RecentReleaseIte
 
 // 상세 페이지 라우트용: 대상 저장소의 메타데이터 목록 (getStaticPaths)
 // README가 없어서 카드에서 제외된 저장소는 상세 페이지도 생성하지 않음
-export async function getDetailRouteList(): Promise<Array<{ name: string; defaultBranch: string }>> {
+// updatedAt 은 sitemap lastmod 주입 등 외부에서 재사용
+export interface DetailRouteEntry {
+  name: string;
+  defaultBranch: string;
+  updatedAt: string;
+}
+
+export async function getDetailRouteList(): Promise<DetailRouteEntry[]> {
   const repos = await fetchTargetRepos();
   const checks = await mapLimit(repos, API_CONCURRENCY, async (r) => {
     const readme = await fetchReadme(r.name);
-    return readme ? { name: r.name, defaultBranch: r.default_branch } : null;
+    return readme
+      ? { name: r.name, defaultBranch: r.default_branch, updatedAt: r.updated_at }
+      : null;
   });
-  return checks.filter((r): r is { name: string; defaultBranch: string } => r !== null);
+  return checks.filter((r): r is DetailRouteEntry => r !== null);
 }
 
 // Download URL 결정 (하이브리드)
@@ -163,6 +185,7 @@ async function computeRepoDetail(repoName: string): Promise<RepoDetailData | nul
     url: repo.html_url,
     defaultBranch: repo.default_branch,
     readmeHtml,
+    readmeMarkdown: readme,
     releases,
     downloadUrl,
   };

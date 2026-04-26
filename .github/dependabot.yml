@@ -1,0 +1,37 @@
+# Dependabot 자동 의존성 업데이트 설정
+# - npm: 매주 월요일 09:00 KST(UTC+09:00) 에 PR 생성, 동시 PR 5개 제한
+# - github-actions: 매주 월요일 09:00 KST 에 PR 생성, 동시 PR 3개 제한
+# - 메이저 업데이트는 일반 minor/patch 와 함께 묶이지 않도록 별도 그룹
+# 공식 문서: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "00:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      # 같은 메이저 안의 patch/minor 는 한 PR 로 묶어 노이즈 감소
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "00:00"
+      timezone: "Asia/Seoul"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "chore(actions)"
+      include: "scope"

@@ -9,21 +9,46 @@ import DashboardHero from '../components/DashboardHero.astro';
 import FilterBar from '../components/FilterBar.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import RecentReleases from '../components/RecentReleases.astro';
-import { getAllRepoCards, collectTopics, collectRecentReleases } from '../lib/data';
+import { getAllRepoCards, collectTopics, collectLanguages, collectRecentReleases } from '../lib/data';
+import { absoluteUrl } from '../lib/paths';
 
 // 빌드 타임 데이터 페칭
 const cards = await getAllRepoCards();
 const topics = collectTopics(cards);
+const languages = collectLanguages(cards);
 const recentReleases = await collectRecentReleases(3);
+
+const siteUrl = absoluteUrl(Astro.site, '/');
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': `${siteUrl}#website`,
+      url: siteUrl,
+      name: 'BIT LEADER',
+      description:
+        'BIT LEADER 엔지니어링 팀이 만든 제품과 실험을 공유하는 공간입니다.',
+      inLanguage: 'ko',
+    },
+    {
+      '@type': 'Organization',
+      '@id': `${siteUrl}#organization`,
+      name: 'BITLEADER CORP.',
+      url: siteUrl,
+      sameAs: ['https://github.com/bitleader-dev'],
+    },
+  ],
+};
 ---
 
-<Layout>
+<Layout jsonLd={jsonLd}>
   <Header />
 
   <main id="main" class="pt-24 px-8 pb-12 min-h-screen max-w-[1440px] mx-auto">
     <DashboardHero />
     <RecentReleases items={recentReleases} />
-    <FilterBar topics={topics} />
+    <FilterBar topics={topics} languages={languages} />
 
     {
       cards.length === 0 ? (

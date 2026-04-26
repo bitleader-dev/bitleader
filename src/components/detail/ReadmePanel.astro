@@ -1,13 +1,13 @@
 ---
-// 왼쪽 README 패널
-// 참고 디자인: 상단 "README.md" 라벨 바 + 본문 (prose 스타일)
-// 본문은 미리 sanitize된 HTML이므로 set:html로 주입
-
 interface Props {
   html: string;
+  markdown: string;
 }
 
-const { html } = Astro.props;
+const { html, markdown } = Astro.props;
+
+// </script> 토큰이 본문에 있으면 inline data island 가 조기 종료되어 raw markdown 이 잘림 → 사전 escape
+const safeMarkdown = markdown.replace(/<\/script/gi, '<\\/script');
 ---
 
 <section class="glass-card rounded-xl overflow-hidden">
@@ -16,6 +16,42 @@ const { html } = Astro.props;
       <span class="material-symbols-outlined text-white/40">list</span>
       <span class="font-label-md text-white/80">README.md</span>
     </div>
+    <button
+      id="readme-copy-btn"
+      type="button"
+      class="inline-flex items-center justify-center w-8 h-8 rounded text-white/40 hover:text-[#00F0FF] hover:bg-white/5 transition-colors"
+      aria-label="README 본문 복사"
+      data-i18n-arialabel="readme_copy_aria"
+    >
+      <span class="material-symbols-outlined text-[18px]">content_copy</span>
+    </button>
   </div>
-  <div class="p-10 prose-dark" set:html={html} />
+  {/* type="text/markdown" 이라 브라우저는 실행하지 않고 textContent 로 raw markdown 만 보존 */}
+  <script is:inline id="readme-markdown" type="text/markdown" set:html={safeMarkdown} />
+  <div id="readme-content" class="p-10 prose-dark" set:html={html} />
 </section>
+
+<script>
+  // is:inline 미적용 → Astro 가 외부 _astro/*.js 로 번들링 (저장소 N개 시 dist HTML 중복 제거)
+  const btn = document.getElementById('readme-copy-btn');
+  const src = document.getElementById('readme-markdown');
+  if (btn && src) {
+    const icon = btn.querySelector('.material-symbols-outlined');
+    let resetTimer: ReturnType<typeof setTimeout> | null = null;
+    btn.addEventListener('click', async () => {
+      const text = src.textContent || '';
+      try {
+        await navigator.clipboard.writeText(text);
+        if (icon) icon.textContent = 'check';
+        btn.classList.add('text-[#00F0FF]');
+        if (resetTimer) clearTimeout(resetTimer);
+        resetTimer = setTimeout(() => {
+          if (icon) icon.textContent = 'content_copy';
+          btn.classList.remove('text-[#00F0FF]');
+        }, 1500);
+      } catch (err) {
+        console.error('[readme-copy] clipboard write failed:', err);
+      }
+    });
+  }
+</script>
