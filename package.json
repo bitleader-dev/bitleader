@@ -37,6 +37,6 @@
     "@types/sanitize-html": "^2.16.1",
     "satori": "^0.26.0",
     "satori-html": "^0.3.2",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.3"
   }
 }
