@@ -21,14 +21,15 @@ mkdirSync(dirname(filePath), { recursive: true });
 writeFileSync(
   filePath,
   `// Auto-generated stub (by scripts/ensure-mock-stub.js).
-// Real fixture is gitignored; this file only exists so Rollup can resolve
-// the dynamic import in src/lib/github.ts when MOCK_REPOS is not set.
-// When MOCK_REPOS=1 and a real mock-repos.ts exists locally, the real file
-// takes precedence and this stub is not generated.
+// 실제 fixture 는 .gitignore. astro check 의 ts(2307)/ts(2352) 회피를 위해
+// MockFixtures 인터페이스와 동일한 type signature 를 부여한다.
+// MOCK_REPOS!=1 일 때 vite define DCE 로 번들에서 제거됨.
 
-export const makeMockRepos = () => [];
-export const makeMockReadme = () => null;
-export const makeMockReleases = () => [];
+import type { GitHubRepo, GitHubRelease } from '../lib/types';
+
+export const makeMockRepos = (): GitHubRepo[] => [];
+export const makeMockReadme = (_repoName: string): string | null => null;
+export const makeMockReleases = (_repoName: string): GitHubRelease[] => [];
 `,
 );
 

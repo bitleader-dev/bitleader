@@ -16,6 +16,7 @@
     "prebuild": "node scripts/ensure-mock-stub.js",
     "build": "astro build",
     "preview": "astro preview",
+    "precheck": "node scripts/ensure-mock-stub.js",
     "check": "astro check",
     "test:e2e": "playwright test",
     "astro": "astro"
