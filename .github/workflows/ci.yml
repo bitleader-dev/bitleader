@@ -28,13 +28,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generate 30-repo mock fixture (CI 전용)
+        # check 와 build 모두 fixture 의 type 시그니처에 의존하므로 가장 먼저 30개 데이터를 만든다.
+        # 이후 단계의 precheck/prebuild 훅(ensure-mock-stub.js)은 existsSync 가드로 skip.
+        run: node scripts/generate-mock-fixtures.js
+
       - name: Type check (astro check)
         run: npm run check
-
-      - name: Generate 30-repo mock fixture (CI 전용)
-        # 사용자 로컬 fixture 가 .gitignore 라 CI 에는 없음 → generator 가 30개 결정적 데이터로 fixture 작성.
-        # 로컬에 사용자 fixture 가 있는 경우 generator 는 existsSync 가드로 건너뜀(자동 보호).
-        run: node scripts/generate-mock-fixtures.js
 
       - name: Build (MOCK_REPOS=1, 30-repo simulation, no token required)
         env:
