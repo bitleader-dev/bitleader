@@ -24,6 +24,20 @@ test.describe('저장소 상세 페이지', () => {
     expect(parsed.codeRepository).toMatch(/^https:\/\/github\.com\//);
   });
 
+  test('카드 제목과 상세 페이지 title 이 동일 (displayName 폴백 일관성)', async ({ page }) => {
+    // 카드(h4) 와 상세 페이지(<title>) 는 동일한 displayName ?? name 폴백을 거친다.
+    // 한쪽만 깨지면 즉시 갈라지므로 식별자/표시명 분리 회귀를 잡는 가드.
+    await page.goto('/bitleader/');
+    const card = page.locator('.repo-card:visible').first();
+    await expect(card).toBeVisible();
+    const cardTitle = (await card.locator('h4').textContent())?.trim();
+    const href = await card.getAttribute('href');
+    expect(cardTitle).toBeTruthy();
+    expect(href).toMatch(/^\/bitleader\/[^/]+/);
+    await page.goto(href!);
+    await expect(page).toHaveTitle(`${cardTitle} — BIT LEADER`);
+  });
+
   test('Back to Top: 스크롤 다운 → 버튼 노출 → 클릭 → 상단 복귀', async ({ page }) => {
     await gotoFirstDetail(page);
 
