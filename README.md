@@ -264,7 +264,58 @@ GitHub 저장소 정보(Topics, Description, README, Releases 등)를 수정한 
 > 저장소가 **60일 이상 비활성** 상태면 GitHub가 schedule 트리거를 자동 중단합니다. 이 경우 본 수동 실행을 1회 실행하면 다시 활성화됩니다.
 
 ### GitHub Actions 내 인증
-GitHub Actions는 워크플로우 실행 시 `GITHUB_TOKEN` 시크릿을 자동 주입합니다. 별도 PAT 설정이 필요 없으며 public 저장소 읽기 권한이 자동 포함됩니다.
+
+본 사이트 빌드는 `bitleader-dev/*` 의 여러 저장소를 cross-repo 로 호출합니다. GitHub Actions 의 자동 주입 시크릿 `GITHUB_TOKEN` 은 **워크플로우가 실행되는 저장소에만 권한이 발급**되어, 다른 저장소 응답이 origin 공유 캐시에서 stale 로 서빙되는 경우가 있습니다. 이 때문에 schedule 빌드(매일 UTC 00:00)에서 새 release/README 가 한 사이클 늦게 반영되는 사례가 발생합니다.
+
+이를 회피하기 위해 본 워크플로우는 사용자 PAT 를 `secrets.PAT_GH_API` 로 주입해 사용합니다. 처음 1회 등록만 하면 이후 schedule 빌드도 동일하게 인증 호출로 동작합니다.
+
+#### 1) PAT 발급
+
+발급 화면·기본 절차는 위 `### 2) GitHub Personal Access Token 발급` 과 동일합니다. Build 용 토큰 권장값만 차이가 있습니다.
+
+| 항목 | 권장 값 |
+|---|---|
+| Token name | `bitleader-dev-homepage-build` |
+| Expiration | 1년 (또는 정책에 맞게) |
+| Resource owner | `bitleader-dev` (조직 정책으로 막혀 있으면 본인 개인 계정으로 발급해도 public 저장소 read 는 동작) |
+| Repository access | `Public Repositories (read-only)` 또는 `Only select repositories` 로 카드에 노출할 저장소 선택 |
+| Repository permissions | `Contents: Read-only` (Metadata: Read-only 는 자동 부여) |
+
+> 토큰 문자열은 발급 직후 1회만 화면에 표시됩니다. 즉시 다음 단계의 시크릿 등록을 진행하거나 안전한 위치에 잠시 보관하세요.
+
+#### 2) 저장소 시크릿 등록
+
+워크플로우 파일이 위치한 저장소(`bitleader-dev/bitleader`) 에 등록합니다.
+
+1. 저장소 페이지 상단의 **Settings** 탭
+2. 좌측 사이드바의 **Secrets and variables** → **Actions**
+3. **Repository secrets** 영역 우측의 **New repository secret** 클릭
+4. 입력:
+   - **Name**: `PAT_GH_API` (워크플로우의 `secrets.PAT_GH_API` 와 대소문자까지 정확히 일치)
+   - **Secret**: 1) 단계에서 발급한 토큰 문자열 붙여넣기
+5. **Add secret** 클릭
+
+> 이미 `PAT_GH_API` 가 등록되어 있으면 같은 화면에서 **Update** 로 토큰 값만 갱신할 수 있습니다. 워크플로우 수정은 불필요합니다.
+
+#### 3) 동작 검증
+
+1. `bitleader-dev/bitleader` 저장소 → **Actions** 탭 → **Deploy to GitHub Pages** → **Run workflow** → Branch `main` 에서 실행
+2. 1~2 분 뒤 ✓ 초록색이면 정상
+3. **build** job → **Build Astro site** 스텝 로그에서 아래 키워드가 **없어야** 정상:
+
+| 검색 키워드 | 의미 | 대응 |
+|---|---|---|
+| `[github] 401` | 토큰 인증 실패 (오타/만료) | 토큰 재발급 또는 시크릿 값 재등록 |
+| `[github] 403` | 토큰 권한 부족 | `Contents: Read-only` 추가 |
+| `Rate limit exceeded` | 시크릿 미주입 (이름 오타) → 비인증 폴백 후 limit 초과 | 시크릿 이름 `PAT_GH_API` 확인 |
+
+미등록·권한 부족 시 빌드는 비인증 폴백으로 진행되어 rate limit (60/h) 에 걸리거나 README/Releases 가 누락될 수 있습니다.
+
+#### 4) 갱신·폐기
+
+- **만료 도래**: GitHub 가 만료 7 일 전·당일에 이메일로 알림. 만료되면 schedule 빌드부터 비인증 폴백으로 떨어집니다. 동일 절차로 새 토큰을 발급한 뒤 시크릿 값만 **Update** 하면 됩니다.
+- **토큰 노출 시**: 즉시 GitHub Settings → Developer settings 에서 해당 토큰을 **Revoke** → 새 토큰 발급 → 시크릿 **Update**.
+- **새 저장소 추가 시**: 발급 시 `Only select repositories` 로 제한했다면, 카드에 노출할 저장소가 늘어날 때 토큰 설정에서 해당 저장소를 추가 선택하거나 `Public Repositories (read-only)` 로 변경해야 합니다.
 
 ---
 

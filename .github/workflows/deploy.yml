@@ -39,13 +39,13 @@ jobs:
         run: npm ci
 
       - name: Build Astro site
-        # GitHub Actions 자동 주입 secrets.GITHUB_TOKEN 사용 (rate limit 1000/h).
-        # 본 사이트 빌드는 저장소 N개 × API 3종(repos/readme/releases) 호출이라 한도 내.
-        # 주의: cross-repo release listing 에서 동일 토큰의 stale cache 가 다음 빌드까지
-        # 새 release 를 한 사이클 늦게 보여줄 수 있음. 즉시 반영이 필요하면 Actions 탭에서
-        # "Run workflow" 로 한 번 더 트리거하거나 PAT 를 secrets.PAT_GH_API 로 등록해 사용.
+        # cross-repo (bitleader-dev/*) 호출에는 사용자 PAT 를 사용한다.
+        # secrets.GITHUB_TOKEN 은 워크플로우 저장소에만 권한이 발급되어,
+        # 다른 저장소 응답이 GitHub origin 의 공유 캐시에서 stale 로 서빙되며
+        # schedule 빌드(UTC 00:00)에서 새 release/README 가 누락되는 사례가 관측됨.
+        # secrets.PAT_GH_API 에 repo:read 권한 fine-grained PAT 를 등록해 사용한다.
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_GH_API }}
         run: npm run build
 
       - name: Upload Pages artifact
