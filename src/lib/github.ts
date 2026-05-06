@@ -74,10 +74,7 @@ async function githubFetch<T>(
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
     'User-Agent': 'bitleader-dev-homepage',
-    // GitHub origin/CDN 측 응답 캐시로 인해 새 release 가 한 사이클 늦게 노출되는
-    // 사례가 secrets.GITHUB_TOKEN 사용 시 관측되었음. 현재는 PAT 기반 인증으로
-    // 캐시 키가 분리되어 영향이 최소화되지만, schedule 빌드의 안전망으로
-    // no-cache 를 보내 원본 재검증을 권고한다.
+    // 헤더 no-cache + fetch no-store 로 schedule 빌드의 GitHub origin 캐시 stale 차단
     'Cache-Control': 'no-cache',
   };
   if (token) {
@@ -85,8 +82,6 @@ async function githubFetch<T>(
   }
 
   try {
-    // cache: 'no-store' 는 Node fetch(undici) 의 HTTP 캐시 레이어를 건너뛰어
-    // 헤더 측 no-cache 와 함께 빌드 간 stale 응답을 차단한다.
     const res = await fetch(url, { headers, cache: 'no-store' });
     if (res.status === 404) {
       if (notFoundIsNull) return { data: null, response: res };

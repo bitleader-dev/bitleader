@@ -39,11 +39,8 @@ jobs:
         run: npm ci
 
       - name: Build Astro site
-        # cross-repo (bitleader-dev/*) 호출에는 사용자 PAT 를 사용한다.
-        # secrets.GITHUB_TOKEN 은 워크플로우 저장소에만 권한이 발급되어,
-        # 다른 저장소 응답이 GitHub origin 의 공유 캐시에서 stale 로 서빙되며
-        # schedule 빌드(UTC 00:00)에서 새 release/README 가 누락되는 사례가 관측됨.
-        # secrets.PAT_GH_API 에 repo:read 권한 fine-grained PAT 를 등록해 사용한다.
+        # cross-repo 호출용 PAT — 자동 GITHUB_TOKEN 은 외부 저장소 응답 캐시 stale 이슈
+        # 등록·검증·갱신 절차: README "GitHub Actions 내 인증" 섹션 참조
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_GH_API }}
         run: npm run build
