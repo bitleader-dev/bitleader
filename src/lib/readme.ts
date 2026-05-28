@@ -81,7 +81,8 @@ function getMarked(): Promise<Marked> {
   return markedPromise;
 }
 
-// 첫 번째 이미지 추출: Markdown ![alt](url) 우선, 없으면 HTML <img src="...">
+// 첫 번째 이미지 추출: Markdown ![alt](url) 와 HTML <img src="..."> 중
+// 문서에서 더 먼저 등장하는 것을 선택 (문법 종류가 아닌 위치 기준)
 // 상대 경로는 raw.githubusercontent.com 절대 경로로 변환
 export function extractFirstImage(
   markdown: string,
@@ -90,19 +91,24 @@ export function extractFirstImage(
 ): string | null {
   if (!markdown) return null;
 
-  // 1) Markdown 이미지 문법: ![alt](url "title")
+  // Markdown 이미지 문법: ![alt](url "title")
   const mdMatch = markdown.match(/!\[[^\]]*\]\(\s*<?([^\s)>]+)>?(?:\s+"[^"]*")?\s*\)/);
-  if (mdMatch && mdMatch[1]) {
-    return normalizeImageUrl(mdMatch[1], repoName, defaultBranch);
-  }
-
-  // 2) HTML <img src="..."> 태그
+  // HTML <img src="..."> 태그
   const htmlMatch = markdown.match(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/i);
-  if (htmlMatch && htmlMatch[1]) {
-    return normalizeImageUrl(htmlMatch[1], repoName, defaultBranch);
+
+  // 두 종류 모두 있으면 문서상 위치(index)가 앞선 쪽을 첫 이미지로 채택
+  let chosen: string | null = null;
+  if (mdMatch?.[1] && htmlMatch?.[1]) {
+    chosen = (mdMatch.index ?? Infinity) <= (htmlMatch.index ?? Infinity)
+      ? mdMatch[1]
+      : htmlMatch[1];
+  } else if (mdMatch?.[1]) {
+    chosen = mdMatch[1];
+  } else if (htmlMatch?.[1]) {
+    chosen = htmlMatch[1];
   }
 
-  return null;
+  return chosen ? normalizeImageUrl(chosen, repoName, defaultBranch) : null;
 }
 
 // URL 정규화
