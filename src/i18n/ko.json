@@ -5,7 +5,6 @@
   "notfound_desc": "요청하신 저장소 페이지가 존재하지 않거나, 이름이 변경되었을 수 있습니다.",
   "badge_archived": "보관됨",
   "badge_fork": "포크",
-  "recent_releases_heading": "최근 릴리스",
   "stat_active_projects": "활성 프로젝트",
   "stat_open_issues": "열린 이슈",
   "stat_uptime": "시스템 가동률",
