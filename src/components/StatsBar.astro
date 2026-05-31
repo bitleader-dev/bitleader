@@ -1,0 +1,46 @@
+---
+// 메인 대시보드 상단 통계 바
+// - 4개 지표: 활성 프로젝트 / 열린 이슈 / 시스템 가동률(고정 표기) / 최근 배포
+// - 라벨 span(data-i18n)과 값 span(data-iso/숫자)을 분리해 i18n.ts 의 textContent 재포맷과 충돌 방지
+// - 최근 배포: latestDeployIso 가 있으면 빌드 타임 한국어 상대시간 + data-iso(클라이언트 재포맷),
+//   없으면 data-iso 를 부여하지 않고 — 출력 (i18n.ts 의 Invalid Date 회피)
+
+import { formatRelative } from '../i18n/dictionary';
+
+interface Props {
+  projectCount: number;
+  openIssues: number;
+  latestDeployIso: string | null;
+}
+
+const { projectCount, openIssues, latestDeployIso } = Astro.props;
+---
+
+<section class="mb-8">
+  <div class="glass-panel rounded-xl px-6 py-5 flex flex-wrap items-center gap-x-10 gap-y-4">
+    <div class="flex flex-col">
+      <span class="text-xs text-zinc-500" data-i18n="stat_active_projects">활성 프로젝트</span>
+      <span class="text-2xl font-bold text-emerald-400 mt-1">{projectCount}</span>
+    </div>
+    <div class="flex flex-col pl-10 border-l border-white/10">
+      <span class="text-xs text-zinc-500" data-i18n="stat_open_issues">열린 이슈</span>
+      <span class="text-2xl font-bold text-emerald-400 mt-1">{openIssues}</span>
+    </div>
+    <div class="flex flex-col pl-10 border-l border-white/10">
+      <span class="text-xs text-zinc-500" data-i18n="stat_uptime">시스템 가동률</span>
+      <span class="text-2xl font-bold text-emerald-400 mt-1">99.7%</span>
+    </div>
+    <div class="flex flex-col pl-10 border-l border-white/10">
+      <span class="text-xs text-zinc-500" data-i18n="stat_recent_deploy">최근 배포</span>
+      {
+        latestDeployIso ? (
+          <span class="text-2xl font-bold text-emerald-400 mt-1" data-iso={latestDeployIso}>
+            {formatRelative(latestDeployIso, 'ko')}
+          </span>
+        ) : (
+          <span class="text-2xl font-bold text-emerald-400 mt-1">—</span>
+        )
+      }
+    </div>
+  </div>
+</section>
