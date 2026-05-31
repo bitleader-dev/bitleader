@@ -8,14 +8,18 @@ import Header from '../components/Header.astro';
 import DashboardHero from '../components/DashboardHero.astro';
 import FilterBar from '../components/FilterBar.astro';
 import ProjectCard from '../components/ProjectCard.astro';
-import RecentReleases from '../components/RecentReleases.astro';
+import StatsBar from '../components/StatsBar.astro';
 import { getAllRepoCards, collectTopics, collectRecentReleases } from '../lib/data';
 import { absoluteUrl } from '../lib/paths';
 
 // 빌드 타임 데이터 페칭
 const cards = await getAllRepoCards();
 const topics = collectTopics(cards);
-const recentReleases = await collectRecentReleases(3);
+
+// 상단 통계 바 데이터 집계
+const openIssues = cards.reduce((sum, c) => sum + c.openIssues, 0);
+const latestRelease = await collectRecentReleases(1);
+const latestDeployIso = latestRelease[0]?.publishedAt ?? null;
 
 const siteUrl = absoluteUrl(Astro.site, '/');
 const jsonLd = {
@@ -46,7 +50,7 @@ const jsonLd = {
 
   <main id="main" class="pt-24 px-8 pb-12 min-h-screen max-w-[1440px] mx-auto">
     <DashboardHero />
-    <RecentReleases items={recentReleases} />
+    <StatsBar projectCount={cards.length} openIssues={openIssues} latestDeployIso={latestDeployIso} />
     <FilterBar topics={topics} />
 
     {
