@@ -28,8 +28,15 @@ export function formatTpl(template: string, vars: Record<string, string | number
 export function formatRelative(iso: string, lang: LangCode, now: number = Date.now()): string {
   const dict = dictionaries[lang];
   const date = new Date(iso);
-  const diffDays = Math.floor((now - date.getTime()) / 86400000);
-  if (diffDays === 0) return dict.time_today;
+  const diffMs = now - date.getTime();
+  const diffDays = Math.floor(diffMs / 86400000);
+  // 당일(24시간 미만)은 시간 단위로 세분화. 미래/1시간 미만은 "방금 전"으로 흡수.
+  if (diffDays === 0) {
+    const diffHours = Math.floor(diffMs / 3600000);
+    if (diffHours < 1) return dict.time_just_now;
+    if (diffHours === 1) return dict.time_hour_ago;
+    return formatTpl(dict.time_hours_ago, { hours: diffHours });
+  }
   if (diffDays === 1) return dict.time_yesterday;
   if (diffDays < 30) return formatTpl(dict.time_days_ago, { days: diffDays });
   return date.toLocaleDateString(lang === 'ko' ? 'ko-KR' : 'en-US', {

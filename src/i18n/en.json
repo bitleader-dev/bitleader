@@ -44,7 +44,9 @@
   "readme_copy_aria": "Copy README content",
   "card_updated_label": "Updated",
   "card_open_issues_label": "Open Issues",
-  "time_today": "today",
+  "time_just_now": "just now",
+  "time_hour_ago": "1 hour ago",
+  "time_hours_ago": "{hours} hours ago",
   "time_yesterday": "1 day ago",
   "time_days_ago": "{days} days ago",
   "meta_description": "Products and experiments by the BIT LEADER engineering team. Browse and use them freely."
