@@ -19,19 +19,19 @@ const { projectCount, openIssues, latestDeployIso } = Astro.props;
 <section class="mb-8">
   <div class="glass-panel rounded-xl px-6 py-5 flex flex-wrap items-center gap-x-10 gap-y-4">
     <div class="flex flex-col">
-      <span class="text-xs text-zinc-500" data-i18n="stat_active_projects">활성 프로젝트</span>
+      <span class="text-xs text-zinc-400" data-i18n="stat_active_projects">활성 프로젝트</span>
       <span class="text-2xl font-bold text-emerald-400 mt-1">{projectCount}</span>
     </div>
     <div class="flex flex-col pl-10 border-l border-white/10">
-      <span class="text-xs text-zinc-500" data-i18n="stat_open_issues">열린 이슈</span>
+      <span class="text-xs text-zinc-400" data-i18n="stat_open_issues">열린 이슈</span>
       <span class="text-2xl font-bold text-emerald-400 mt-1">{openIssues}</span>
     </div>
     <div class="flex flex-col pl-10 border-l border-white/10">
-      <span class="text-xs text-zinc-500" data-i18n="stat_uptime">시스템 가동률</span>
+      <span class="text-xs text-zinc-400" data-i18n="stat_uptime">시스템 가동률</span>
       <span class="text-2xl font-bold text-emerald-400 mt-1">99.7%</span>
     </div>
     <div class="flex flex-col pl-10 border-l border-white/10">
-      <span class="text-xs text-zinc-500" data-i18n="stat_recent_deploy">최근 배포</span>
+      <span class="text-xs text-zinc-400" data-i18n="stat_recent_deploy">최근 배포</span>
       {
         latestDeployIso ? (
           <span class="text-2xl font-bold text-emerald-400 mt-1" data-iso={latestDeployIso}>

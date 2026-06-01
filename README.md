@@ -65,6 +65,7 @@
 - **focus-visible 포커스 링**: 모든 인터랙티브 요소(링크·버튼·입력·드롭다운)에 키보드 포커스 전용 시안 아웃라인. 마우스 클릭에는 노이즈 없음
 - **aria-\* 보강**: 페이지네이션 prev/next `aria-label` + `#page-info` `aria-live="polite"`, Topic 필터 `aria-controls`/`aria-haspopup`/`aria-expanded`, 북마크 버튼 `aria-pressed`, 모든 aria-label 은 i18n 연동(언어 전환 시 자동 갱신)
 - **모션 민감 사용자 대응**: `@media (prefers-reduced-motion: reduce)` 로 모든 트랜지션/애니메이션을 즉시 종료, smooth scroll 도 instant 로 분기 (페이지네이션 클릭, Back to Top). OS 의 "동작 줄이기" 설정을 자동 반영
+- **색상 대비·제목 계층**: 통계 바·필터 라벨·카드 본문 등 소형 텍스트 색상을 WCAG AA 명도 대비(4.5:1) 이상으로 유지, 카드 제목을 `<h3>` 으로 맞춰 제목 단계(h1→h2→h3)를 건너뛰지 않도록 정렬
 
 ---
 
