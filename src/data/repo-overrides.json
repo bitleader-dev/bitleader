@@ -1,12 +1,13 @@
 {
   "ClipMemory-releases": {
-    "downloadUrl": "https://apps.microsoft.com/detail/9NHKSBLRZT53?hl=ko-kr&gl=KR&ocid=pdpshare",
+    "downloadUrl": "https://apps.microsoft.com/detail/9NHKSBLRZT53?hl",
     "displayName": "ClipMemory"
   },
   "DokkaebiTerminal": {
     "displayName": "Dokkaebi Terminal"
   },
   "NapCat": {
+     "downloadUrl": "https://apps.microsoft.com/detail/9N2PT9WJMZ28?hl",
     "displayName": "쉼냥"
   }
 }
