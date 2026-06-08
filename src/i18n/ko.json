@@ -8,7 +8,7 @@
   "stat_active_projects": "활성 프로젝트",
   "stat_open_issues": "열린 이슈",
   "stat_uptime": "시스템 가동률",
-  "stat_recent_deploy": "최근 배포",
+  "stat_recent_deploy": "최근 업데이트",
   "topic_multi_placeholder": "전체 Topic",
   "topic_multi_summary": "{count}개 선택됨",
   "topic_clear": "초기화",

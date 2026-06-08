@@ -8,7 +8,7 @@
   "stat_active_projects": "Active projects",
   "stat_open_issues": "Open issues",
   "stat_uptime": "System uptime",
-  "stat_recent_deploy": "Recent deploy",
+  "stat_recent_deploy": "Recent update",
   "topic_multi_placeholder": "All Topics",
   "topic_multi_summary": "{count} selected",
   "topic_clear": "Clear",

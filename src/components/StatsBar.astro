@@ -1,8 +1,8 @@
 ---
 // 메인 대시보드 상단 통계 바
-// - 4개 지표: 활성 프로젝트 / 열린 이슈 / 시스템 가동률(고정 표기) / 최근 배포
+// - 4개 지표: 활성 프로젝트 / 열린 이슈 / 시스템 가동률(고정 표기) / 최근 업데이트
 // - 라벨 span(data-i18n)과 값 span(data-iso/숫자)을 분리해 i18n.ts 의 textContent 재포맷과 충돌 방지
-// - 최근 배포: latestDeployIso 가 있으면 빌드 타임 한국어 상대시간 + data-iso(클라이언트 재포맷),
+// - 최근 업데이트: latestDeployIso(카드 업데이트 기준 = 저장소 updated_at 중 최신) 가 있으면 빌드 타임 한국어 상대시간 + data-iso(클라이언트 재포맷),
 //   없으면 data-iso 를 부여하지 않고 — 출력 (i18n.ts 의 Invalid Date 회피)
 
 import { formatRelative } from '../i18n/dictionary';
@@ -31,7 +31,7 @@ const { projectCount, openIssues, latestDeployIso } = Astro.props;
       <span class="text-2xl font-bold text-emerald-400 mt-1">99.7%</span>
     </div>
     <div class="flex flex-col pl-10 border-l border-white/10">
-      <span class="text-xs text-zinc-400" data-i18n="stat_recent_deploy">최근 배포</span>
+      <span class="text-xs text-zinc-400" data-i18n="stat_recent_deploy">최근 업데이트</span>
       {
         latestDeployIso ? (
           <span class="text-2xl font-bold text-emerald-400 mt-1" data-iso={latestDeployIso}>
