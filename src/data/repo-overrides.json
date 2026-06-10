@@ -3,11 +3,12 @@
     "downloadUrl": "https://apps.microsoft.com/detail/9NHKSBLRZT53?hl",
     "displayName": "ClipMemory"
   },
-  "DokkaebiTerminal": {
-    "displayName": "Dokkaebi Terminal"
+  "WorkWeatherLine": {
+     "downloadUrl": "https://apps.microsoft.com/detail/9PP8HPF9FSVM",
+    "displayName": "퇴근구름"
   },
   "NapCat": {
-     "downloadUrl": "https://apps.microsoft.com/detail/9N2PT9WJMZ28?hl",
+     "downloadUrl": "https://apps.microsoft.com/detail/9N2PT9WJMZ28",
     "displayName": "쉼냥"
   }
 }
