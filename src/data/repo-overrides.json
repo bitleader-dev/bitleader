@@ -1,6 +1,14 @@
 {
+      "VibeLog-releases": {
+    "downloadUrl": "ms-windows-store://pdp/?productid=9MV1G48Z6M6L",
+    "displayName": "VibeLog"
+  },
+    "Maru-releases": {
+    "downloadUrl": "https://apps.microsoft.com/detail/9NBQGMDKHVN0",
+    "displayName": "Maru"
+  },
   "ClipMemory-releases": {
-    "downloadUrl": "https://apps.microsoft.com/detail/9NHKSBLRZT53?hl",
+    "downloadUrl": "https://apps.microsoft.com/detail/9NHKSBLRZT53",
     "displayName": "ClipMemory"
   },
   "WorkWeatherLine": {
