@@ -61,7 +61,7 @@ if (detail.description) jsonLd.description = detail.description;
       <div class="grid grid-cols-12 gap-8">
         <!-- 왼쪽: README 패널 -->
         <div class="col-span-12 lg:col-span-8">
-          <ReadmePanel html={detail.readmeHtml} markdown={detail.readmeMarkdown} />
+          <ReadmePanel html={detail.readmeHtml} markdown={detail.readmeMarkdown} filename={detail.docFilename} />
         </div>
 
         <!-- 오른쪽: Releases 카드 + 액션 버튼 -->

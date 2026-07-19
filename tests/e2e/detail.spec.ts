@@ -38,6 +38,23 @@ test.describe('저장소 상세 페이지', () => {
     await expect(page).toHaveTitle(`${cardTitle} — BIT LEADER`);
   });
 
+  test('저장소 루트 help.md 우선 표시 — 헤더 라벨 help.md + 본문 HELP 마커', async ({ page }) => {
+    // MOCK fixture 의 HELP_REPOS(sample-editor 등)는 help.md 를 가져 README 대신 우선 표시된다.
+    await page.goto('/bitleader/sample-editor');
+    await expect(page.locator('.prose-dark').first()).toBeVisible();
+    // 패널 헤더 라벨이 실제 표시 문서 파일명(help.md) — font-label-md 는 헤더 파일명 span 전용
+    await expect(page.locator('.font-label-md', { hasText: 'help.md' })).toBeVisible();
+    // 본문이 help.md 소스(HELP 마커)이고 README 가 아님
+    await expect(page.locator('.prose-dark').first()).toContainText('HELP: sample-editor');
+  });
+
+  test('help.md 없는 저장소 — 헤더 라벨 README.md 폴백', async ({ page }) => {
+    // HELP_REPOS 에 없는 저장소는 help.md 가 없어 기존대로 README 를 표시한다.
+    await page.goto('/bitleader/sample-clipboard');
+    await expect(page.locator('.prose-dark').first()).toBeVisible();
+    await expect(page.locator('.font-label-md', { hasText: 'README.md' })).toBeVisible();
+  });
+
   test('Back to Top: 스크롤 다운 → 버튼 노출 → 클릭 → 상단 복귀', async ({ page }) => {
     await gotoFirstDetail(page);
 

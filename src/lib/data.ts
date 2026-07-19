@@ -2,7 +2,7 @@
 // 카드 렌더링용 RepoCardData 배열로 정규화
 // 또한 상세 페이지용 RepoDetailData 조립 (README 전문 HTML + Releases + Download URL)
 
-import { fetchPublicRepos, fetchReadme, fetchReleases, mapLimit } from './github';
+import { fetchPublicRepos, fetchReadme, fetchHelpDoc, fetchReleases, mapLimit } from './github';
 import { extractFirstImage, extractSummary, renderMarkdown } from './readme';
 
 // GitHub API 동시 inflight 상한 (secondary rate limit ~100/min 회피).
@@ -23,15 +23,32 @@ const HOMEPAGE_REPO = 'bitleader';
 
 const overrides = overridesData as RepoOverridesMap;
 
-// 단일 저장소 → (README 없으면) null / (README 있으면) 카드 데이터
-async function buildCardData(repo: GitHubRepo): Promise<RepoCardData | null> {
-  const readme = await fetchReadme(repo.name);
-
-  // README 없으면 카드 목록에서 제외
+// 표시 문서 소스 선택: help.md 있으면 우선, 없으면 README 폴백.
+// README 존재는 카드·상세 생성의 필수 게이트다 — README 없으면 null(help.md만 있는 저장소는 대상 아님).
+// 카드(요약/이미지)와 상세(HTML/헤더 라벨)가 같은 소스를 쓰도록 이 한 곳에서 결정한다.
+async function resolveDisplayDoc(
+  repoName: string,
+): Promise<{ markdown: string; filename: 'help.md' | 'README.md' } | null> {
+  const readme = await fetchReadme(repoName);
   if (!readme) return null;
 
-  const imageUrl = extractFirstImage(readme, repo.name, repo.default_branch);
-  const summary = extractSummary(readme);
+  const help = await fetchHelpDoc(repoName);
+  // 빈 help.md(빈 문자열)도 "있음"으로 보고 우선한다 — 요구는 "있으면 우선"
+  if (help != null) return { markdown: help, filename: 'help.md' };
+  return { markdown: readme, filename: 'README.md' };
+}
+
+// 단일 저장소 → (README 없으면) null / (README 있으면) 카드 데이터
+// 요약·이미지는 표시 문서(help.md 우선) 기준이되, 생성 게이트는 README 존재
+async function buildCardData(repo: GitHubRepo): Promise<RepoCardData | null> {
+  const doc = await resolveDisplayDoc(repo.name);
+
+  // README 없으면 카드 목록에서 제외 (게이트)
+  if (!doc) return null;
+
+  const { markdown } = doc;
+  const imageUrl = extractFirstImage(markdown, repo.name, repo.default_branch);
+  const summary = extractSummary(markdown);
 
   return {
     name: repo.name,
@@ -164,14 +181,15 @@ async function computeRepoDetail(repoName: string): Promise<RepoDetailData | nul
   const repo = repos.find((r) => r.name === repoName);
   if (!repo) return null;
 
-  const [readme, releases] = await Promise.all([
-    fetchReadme(repoName),
+  const [doc, releases] = await Promise.all([
+    resolveDisplayDoc(repoName),
     fetchReleases(repoName),
   ]);
 
-  if (!readme) return null;
+  // README 없으면 상세 페이지 미생성 (게이트 — resolveDisplayDoc이 README 존재 시에만 non-null)
+  if (!doc) return null;
 
-  const readmeHtml = await renderMarkdown(readme, repoName, repo.default_branch);
+  const readmeHtml = await renderMarkdown(doc.markdown, repoName, repo.default_branch);
   const downloadUrl = resolveDownloadUrl(repoName, releases);
 
   return {
@@ -181,7 +199,8 @@ async function computeRepoDetail(repoName: string): Promise<RepoDetailData | nul
     url: repo.html_url,
     defaultBranch: repo.default_branch,
     readmeHtml,
-    readmeMarkdown: readme,
+    readmeMarkdown: doc.markdown,
+    docFilename: doc.filename,
     releases,
     downloadUrl,
   };

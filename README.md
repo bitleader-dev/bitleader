@@ -34,6 +34,7 @@
 - **URL 형식**: `/bitleader/{repo-name}`
 - **헤더 영역**: README 카드 위에 저장소 이름(시안색) + About Description 한 줄 표시 (description 없으면 이름만)
 - **2열 레이아웃**: 왼쪽 README 전문 + 오른쪽 Releases 카드 및 액션 버튼
+- **표시 문서 우선순위**: 저장소 루트에 `help.md` 가 있으면 README 대신 우선 표시 (대소문자 변형 허용, 없으면 README 폴백). 헤더 라벨도 표시 중인 파일명을 따름 (아래 "카드 설명(Description) 관리 > 표시 문서 우선순위" 참고)
 - **README 렌더링**: Markdown → 안전한 HTML 변환 (sanitize-html로 XSS 방지)
 - **README 본문 복사 버튼**: 카드 헤더 우측의 복사 아이콘 클릭 → README **마크다운 원문**(헤딩 `#`, 리스트 `-`, 링크 `[text](url)`, 코드블록 ```` ``` ```` 등 syntax 그대로 보존)을 클립보드에 복사. 다른 마크다운 에디터/문서에 그대로 붙여넣기 가능. 복사 직후 1.5초간 ✓ 체크 아이콘 + 시안색 강조로 시각적 피드백 (`navigator.clipboard.writeText`)
 - **코드 syntax highlighting**: 빌드 타임에 `shiki`(github-dark 테마) 로 README/릴리스 본문 코드 블록을 토큰 색상화. 미지원 언어는 일반 텍스트로 안전 폴백, 디자인 톤(검정 배경 + 시안 좌측 보더) 유지
@@ -504,7 +505,7 @@ Topic 등록/수정 후 사이트에 나타나려면 홈페이지 저장소의 �
 ### 표시 우선순위
 
 1. **GitHub 저장소 `description`** — 값이 있으면 최우선 사용
-2. **README 앞부분 180자 요약** — description 이 비어 있으면 README 본문에서 자동 추출 (Markdown 문법은 제거 후 잘라냄)
+2. **표시 문서 앞부분 180자 요약** — description 이 비어 있으면 표시 문서(help.md 우선, 없으면 README) 본문에서 자동 추출 (Markdown 문법은 제거 후 잘라냄). 문서 선택 규칙은 아래 **"표시 문서 우선순위"** 참고
 3. **둘 다 없음** — 설명 영역 자체를 렌더링하지 않음 (제목/칩만 표시)
 
 ### 저장소 Description 등록하기
@@ -524,7 +525,18 @@ Description 등록/수정 후 사이트에 나타나려면 홈페이지 저장�
 
 ### 상세 페이지에서는?
 
-상세 페이지(`/bitleader/{repo-name}`)는 README 카드 위 헤더에 Description 한 줄을 표시하고, 본문에는 **README 전문**을 렌더링합니다. Description 수정 시 다음 빌드에 헤더 영역이 갱신되며, README 자체를 수정하면 본문이 갱신됩니다.
+상세 페이지(`/bitleader/{repo-name}`)는 표시 문서 카드 위 헤더에 Description 한 줄을 표시하고, 본문에는 **표시 문서 전문**을 렌더링합니다. Description 수정 시 다음 빌드에 헤더 영역이 갱신되며, 표시 문서를 수정하면 본문이 갱신됩니다.
+
+### 표시 문서 우선순위 (help.md / README)
+
+상세 패널 본문과 카드 요약·썸네일은 아래 순서로 표시 문서를 선택합니다.
+
+1. **저장소 루트 `help.md`** — 있으면 README 대신 우선 표시 (대소문자 변형 `HELP.md`·`Help.md` 등 허용)
+2. **`README.md`** — help.md 가 없으면 README 사용 (폴백)
+
+- 상세 패널 상단 헤더 라벨은 실제 표시 중인 파일명(`help.md` 또는 `README.md`)을 나타냅니다.
+- 카드의 180자 요약·첫 이미지도 위 우선순위로 선택된 문서에서 추출됩니다.
+- **카드·상세 페이지 생성 기준은 여전히 `README.md` 존재**입니다 — help.md 만 있고 README.md 가 없는 저장소는 대상에서 제외됩니다 (위 "카드 표시 제외 규칙" 참고).
 
 ---
 

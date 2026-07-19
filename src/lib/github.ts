@@ -6,7 +6,7 @@
 //   실제 네트워크 fetch 는 1번만 일어나도록 Promise 단위로 캐시한다
 // - 저장소 수가 늘어나면 빌드 시간·Rate Limit 부담이 선형 증가하므로 필수 최적화
 
-import type { GitHubRepo, GitHubReadme, GitHubRelease } from './types';
+import type { GitHubRepo, GitHubReadme, GitHubRelease, GitHubContentEntry } from './types';
 
 // bitleader-dev 계정 고정
 const OWNER = 'bitleader-dev';
@@ -21,6 +21,7 @@ type MockFixtures = {
   makeMockRepos: (count?: number) => GitHubRepo[];
   makeMockReadme: (repoName: string) => string;
   makeMockReleases: (repoName: string) => GitHubRelease[];
+  makeMockHelp: (repoName: string) => string | null;
 };
 
 let mockFixturesPromise: Promise<MockFixtures | null> | null = null;
@@ -154,6 +155,7 @@ export async function mapLimit<T, R>(
 // Promise 자체를 저장해 동시 호출도 단일 inflight 로 처리된다
 let reposPromise: Promise<GitHubRepo[]> | null = null;
 const readmeCache = new Map<string, Promise<string | null>>();
+const helpCache = new Map<string, Promise<string | null>>();
 const releasesCache = new Map<string, Promise<GitHubRelease[]>>();
 
 // public 저장소 목록 전수 조회 (Link 헤더 기반 페이지네이션으로 100개 초과 지원)
@@ -203,6 +205,43 @@ export function fetchReadme(repoName: string): Promise<string | null> {
     }
   })();
   readmeCache.set(repoName, p);
+  return p;
+}
+
+// help.md 조회 (base64 디코딩된 raw markdown 반환, 없으면 null)
+// 저장소 루트 contents 리스팅에서 help.md(대소문자 무관)를 찾은 뒤 개별 조회한다.
+// README 폴백은 호출부(data.ts resolveDisplayDoc)에서 처리하며, 여기서는 help 존재 여부만 반환.
+// 취득 실패는 null 로 복구 — help 조회 실패가 저장소를 카드에서 떨어뜨리지 않도록 한다(fetchReadme 정책과 동일).
+export function fetchHelpDoc(repoName: string): Promise<string | null> {
+  const cached = helpCache.get(repoName);
+  if (cached) return cached;
+
+  const listUrl = `${API_BASE}/repos/${OWNER}/${repoName}/contents`;
+  const p = (async () => {
+    if (USE_MOCK) {
+      const fx = await loadMockFixtures();
+      if (fx) return fx.makeMockHelp(repoName);
+    }
+    try {
+      // 루트 리스팅은 파일 목록(배열)만 주고 content 는 없으므로 파일명 매칭 후 개별 조회
+      const entries = await githubFetchData<GitHubContentEntry[]>(listUrl);
+      if (!Array.isArray(entries)) return null;
+      const helpEntry = entries.find(
+        (e) => e.type === 'file' && /^help\.md$/i.test(e.name),
+      );
+      if (!helpEntry) return null;
+
+      // 루트 리스팅이라 현재 path === name 이지만, 경로 조합엔 path 를 써 타입 의도(경로)와 일관 유지
+      const fileUrl = `${API_BASE}/repos/${OWNER}/${repoName}/contents/${helpEntry.path}`;
+      const data = await githubFetchData<GitHubReadme>(fileUrl);
+      if (!data || data.encoding !== 'base64') return null;
+      return Buffer.from(data.content, 'base64').toString('utf-8');
+    } catch (err) {
+      console.error(`[github] help.md fetch failed for ${repoName}, ignoring:`, err);
+      return null;
+    }
+  })();
+  helpCache.set(repoName, p);
   return p;
 }
 

@@ -115,6 +115,21 @@ export function makeMockReadme(repoName: string): string {
   );
 }
 
+// help.md 우선 표시 회귀용 fixture: 아래 목록 저장소만 help.md 부여(나머지 null → README 폴백).
+// README(\`# \${repoName}\`)와 구분되도록 \`# HELP: \${repoName}\` 마커로 시작해 우선 표시 여부를 grep/E2E로 판별한다.
+// 주의: updated 최신(=첫 카드)인 sample-terminal 은 제외한다 — 첫 상세를 여는 기존 E2E(Back to Top 등)가
+// 짧은 help 본문으로 스크롤 불가해지는 회귀를 막기 위함. help 검증은 첫 카드가 아닌 저장소로 한다.
+const HELP_REPOS = ['sample-editor', 'sample-sdk'];
+
+export function makeMockHelp(repoName: string): string | null {
+  if (!HELP_REPOS.includes(repoName)) return null;
+  return (
+    \`# HELP: \${repoName}\\n\\n\` +
+    \`This is a mock **help.md** for \${repoName}, used to verify help-over-README priority (MOCK_REPOS=1).\\n\\n\` +
+    \`## Getting Started\\n\\n- Step one\\n- Step two\\n\`
+  );
+}
+
 export function makeMockReleases(repoName: string): GitHubRelease[] {
   const hash = repoName.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
   const count = hash % 4;

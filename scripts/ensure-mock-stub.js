@@ -29,6 +29,7 @@ import type { GitHubRepo, GitHubRelease } from '../lib/types';
 
 export const makeMockRepos = (): GitHubRepo[] => [];
 export const makeMockReadme = (_repoName: string): string | null => null;
+export const makeMockHelp = (_repoName: string): string | null => null;
 export const makeMockReleases = (_repoName: string): GitHubRelease[] => [];
 `,
 );

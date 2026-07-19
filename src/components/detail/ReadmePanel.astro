@@ -2,9 +2,10 @@
 interface Props {
   html: string;
   markdown: string;
+  filename: string; // 헤더에 표시할 문서 파일명 (help.md 우선, 없으면 README.md)
 }
 
-const { html, markdown } = Astro.props;
+const { html, markdown, filename } = Astro.props;
 
 // </script> 토큰이 본문에 있으면 inline data island 가 조기 종료되어 raw markdown 이 잘림 → 사전 escape
 const safeMarkdown = markdown.replace(/<\/script/gi, '<\\/script');
@@ -14,7 +15,7 @@ const safeMarkdown = markdown.replace(/<\/script/gi, '<\\/script');
   <div class="bg-white/5 px-6 py-3 border-b border-white/10 flex items-center justify-between">
     <div class="flex items-center gap-2">
       <span class="material-symbols-outlined text-white/40">list</span>
-      <span class="font-label-md text-white/80">README.md</span>
+      <span class="font-label-md text-white/80">{filename}</span>
     </div>
     <button
       id="readme-copy-btn"

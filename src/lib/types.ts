@@ -26,6 +26,14 @@ export interface GitHubReadme {
   name: string;
 }
 
+// GitHub REST API /repos/{owner}/{repo}/contents 루트 리스팅 응답 요소 (사용 필드만)
+// 디렉토리 리스팅은 content 를 포함하지 않으므로 파일명 탐색 후 개별 조회가 필요
+export interface GitHubContentEntry {
+  name: string;
+  path: string;
+  type: string; // 'file' | 'dir' 등
+}
+
 // 카드 렌더링에 사용하는 정규화된 데이터
 export interface RepoCardData {
   name: string;
@@ -72,8 +80,9 @@ export interface RepoDetailData {
   description: string | null;
   url: string; // GitHub 저장소 URL
   defaultBranch: string;
-  readmeHtml: string; // sanitize된 README HTML
+  readmeHtml: string; // sanitize된 표시 문서 HTML (help.md 우선, 없으면 README)
   readmeMarkdown: string; // 클립보드 복사용 raw markdown 원문 (변환 전)
+  docFilename: 'help.md' | 'README.md'; // 표시 중인 문서 파일명 (패널 헤더 라벨용)
   releases: GitHubRelease[];
   downloadUrl: string | null; // overrides 또는 Release asset, 없으면 null
 }
